@@ -1,0 +1,39 @@
+Sender: LSF System <lsfadmin@eu-lo-s4-009>
+Subject: Job 197267042: <python pytorchtest.py> in cluster <euler> Exited
+
+Job <python pytorchtest.py> was submitted from host <eu-login-03> by user <thobauma> in cluster <euler> at Fri Dec 17 15:25:22 2021
+Job was executed on host(s) <eu-lo-s4-009>, in queue <gpu.4h>, as user <thobauma> in cluster <euler> at Fri Dec 17 15:25:45 2021
+</cluster/home/thobauma> was used as the home directory.
+</cluster/home/thobauma/deeplearning/setup> was used as the working directory.
+Started at Fri Dec 17 15:25:45 2021
+Terminated at Fri Dec 17 15:25:49 2021
+Results reported at Fri Dec 17 15:25:49 2021
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+python pytorchtest.py
+------------------------------------------------------------
+
+Exited with exit code 1.
+
+Resource usage summary:
+
+    CPU time :                                   0.35 sec.
+    Max Memory :                                 6 MB
+    Average Memory :                             -
+    Total Requested Memory :                     2048.00 MB
+    Delta Memory :                               2042.00 MB
+    Max Swap :                                   -
+    Max Processes :                              -
+    Max Threads :                                -
+    Run time :                                   18 sec.
+    Turnaround time :                            27 sec.
+
+The output (if any) follows:
+
+Traceback (most recent call last):
+  File "pytorchtest.py", line 1, in <module>
+    import torch
+ImportError: No module named torch

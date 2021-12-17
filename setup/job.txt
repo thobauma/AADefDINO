@@ -1,0 +1,3 @@
+bjobs -u all -lp -q gpu.4h
+
+bsub -oo test.out -n 1 -W 4:00 -R "rusage[mem=2048, ngpus_excl_p=3]" python pytorchtest.py
