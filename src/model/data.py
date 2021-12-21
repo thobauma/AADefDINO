@@ -118,9 +118,10 @@ def create_loader(IMAGES_PATH, LABEL_PATH, INDEX_SUBSET=None, CLASS_SUBSET=None,
 
     org_loader = torch.utils.data.DataLoader(
         org_dataset,
-        batch_size=BATCH_SIZE,
-        num_workers=num_workers,
+        batch_size=1,
+        num_workers=1,
         pin_memory=pin_memory,
+        shuffle=False,
     )
     
     return org_loader
@@ -153,7 +154,6 @@ def adv_dataset(org_loader, adv_loader, model, linear_classifier, n=4):
       org_correct = y == org_y
       adv_correct = y == adv_y
         
-      print(f"org_name: {org_name}, adv_name: {adv_name}")
       org_num = int(org_name.replace('.JPEG', '').split("_")[-1])
       adv_num = int(adv_name.replace('.png', '').split("_")[-1])
       assert org_num == adv_num, f"Numbers are not matching: org={org_name}, adv={adv_name}"
