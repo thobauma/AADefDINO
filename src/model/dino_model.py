@@ -33,8 +33,8 @@ class ViTWrapper(torch.nn.Module):
         member variables.
         """
         super(ViTWrapper, self).__init__()
-        self.vits16=vits16.to(device)
-        self.linear_layer=linear_layer.to(device)
+        self.vits16=vits16
+        self.linear_layer=linear_layer
         self.n_last_blocks = n_last_blocks
         self.avgpool_patchtokens = avgpool_patchtokens
         self.transform = transform = pth_transforms.Compose([
