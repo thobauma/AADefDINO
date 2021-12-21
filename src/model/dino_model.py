@@ -49,31 +49,17 @@ class ViTWrapper(torch.nn.Module):
         a Tensor of output data. We can use Modules defined in the constructor as
         well as arbitrary operators on Tensors.
         """
-        if grad is False:
-          with torch.no_grad():
-            x = self.transform(x)
-            
-            # forward
-            intermediate_output = self.vits16.get_intermediate_layers(x, self.n_last_blocks)
-            output = torch.cat([x[:, 0] for x in intermediate_output], dim=-1)
-            if self.avgpool_patchtokens:
-                output = torch.cat((output.unsqueeze(-1), torch.mean(intermediate_output[-1][:, 1:], dim=1).unsqueeze(-1)), dim=-1)
-                output = output.reshape(output.shape[0], -1)
-                    
-            output = self.linear_layer(output)
-            return output
-        else:
-          x = self.transform(x)
-            
-          # forward
-          intermediate_output = self.vits16.get_intermediate_layers(x, self.n_last_blocks)
-          output = torch.cat([x[:, 0] for x in intermediate_output], dim=-1)
-          if self.avgpool_patchtokens:
+        x = self.transform(x)
+
+        # forward
+        intermediate_output = self.vits16.get_intermediate_layers(x, self.n_last_blocks)
+        output = torch.cat([x[:, 0] for x in intermediate_output], dim=-1)
+        if self.avgpool_patchtokens:
             output = torch.cat((output.unsqueeze(-1), torch.mean(intermediate_output[-1][:, 1:], dim=1).unsqueeze(-1)), dim=-1)
             output = output.reshape(output.shape[0], -1)
-                    
-          output = self.linear_layer(output)
-          return output
+
+        output = self.linear_layer(output)
+        return output
 
     def set_weights_for_training(self):
       self.linear_layer.train()
