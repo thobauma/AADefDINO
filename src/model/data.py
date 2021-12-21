@@ -45,24 +45,26 @@ class ImageDataset(Dataset):
 
 
 class AdvTrainingImageDataset(Dataset):
-  def __init__(self, img_folder: str, file_name: str, transform: callable, class_subset: List[int] = None):
+  def __init__(self, img_folder: str, file_name: str, transform: callable, class_subset: List[int] = None, index_subset: List[int] = None):
     super().__init__()
     # MAP CLASSES TO [0, NUM_CLASSES]
-    self.le = preprocessing.LabelEncoder()
-    self.le.fit([i for i in class_subset])
     self.transform=transform
     self.img_folder=img_folder
     self.data = self.create_df(file_name)
     self.class_subset = class_subset
     if self.class_subset is None:
-      self.data_subset = self.data
+      if index_subset is not None:
+          self.data_subset = self.data.iloc[index_subset]
+      else:
+        self.data_subset = self.data
     else:
-      self.data_subset = self.data[self.data['label'].isin(self.class_subset)]
+      self.le = preprocessing.LabelEncoder()
+      self.le.fit([i for i in class_subset])
+      self.data_subset = self.data[self.data['label'].isin(self.class_subset)] 
+      trans_labels = self.le.transform(self.data_subset['label'])
+      self.data_subset = self.data_subset.rename(columns={'label': 'original_label'})
+      self.data_subset['label'] = trans_labels
 
-    trans_labels = self.le.transform(self.data_subset['label'])
-    self.data_subset = self.data_subset.rename(columns={'label': 'original_label'})
-    self.data_subset['label'] = trans_labels
-  
   def create_df(self, file_name: str):
     df = pd.read_csv(file_name, sep=" ", header=None)
     df.columns=['file', 'label']
@@ -99,8 +101,6 @@ def create_loader(IMAGES_PATH, LABEL_PATH, INDEX_SUBSET=None, CLASS_SUBSET=None,
                                    index_subset=INDEX_SUBSET,
                                    class_subset=CLASS_SUBSET)
     elif is_adv_training:
-        assert CLASS_SUBSET is not None, "You should specify a CLASS_SUBSET for an adversarial loader"
-        
         loader_transform = pth_transforms.Compose([
             pth_transforms.Resize(256, interpolation=3),
             pth_transforms.CenterCrop(224),
@@ -110,7 +110,8 @@ def create_loader(IMAGES_PATH, LABEL_PATH, INDEX_SUBSET=None, CLASS_SUBSET=None,
         org_dataset = AdvTrainingImageDataset(img_folder = IMAGES_PATH,
                            file_name = LABEL_PATH,
                            transform=loader_transform,
-                           class_subset=CLASS_SUBSET)
+                           class_subset=CLASS_SUBSET,
+                            index_subset=INDEX_SUBSET)
 
     org_loader = torch.utils.data.DataLoader(
         org_dataset,
