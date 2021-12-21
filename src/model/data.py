@@ -118,8 +118,8 @@ def create_loader(IMAGES_PATH, LABEL_PATH, INDEX_SUBSET=None, CLASS_SUBSET=None,
 
     org_loader = torch.utils.data.DataLoader(
         org_dataset,
-        batch_size=1,
-        num_workers=1,
+        batch_size=BATCH_SIZE,
+        num_workers=num_workers,
         pin_memory=pin_memory,
         shuffle=False,
     )
