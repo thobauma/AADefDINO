@@ -59,15 +59,14 @@ class ViTModel(torch.nn.Module):
           output = torch.cat([x[:, 0] for x in intermediate_output], dim=-1)
           output = self.linear_layer(output)
           return output
-    
+
     
 def get_dino(device='cuda',
              N_LAST_BLOCKS = 4):
     # Load pretrained weights from PyTorch
-    vits16 = torch.hub.load('facebookresearch/dino:main', 'dino_vits8').to(device)
-    linear_classifier = LinearClassifier(vits16.embed_dim * N_LAST_BLOCKS, num_labels=1000)
+    vits = torch.hub.load('facebookresearch/dino:main', 'dino_vits8').to(device)
+    linear_classifier = LinearClassifier(vits.embed_dim * N_LAST_BLOCKS, num_labels=1000)
     linear_classifier = linear_classifier.cuda()
-
     linear_state_dict = torch.hub.load_state_dict_from_url(url="https://dl.fbaipublicfiles.com/dino/" + "dino_deitsmall8_pretrain/dino_deitsmall8_linearweights.pth")["state_dict"]
 
     # Update state dict to avoid crash. Workaround.
@@ -79,4 +78,4 @@ def get_dino(device='cuda',
     
     
     model = ViTModel(vits16, linear_classifier)
-    return model
+    return model, linear_classifier

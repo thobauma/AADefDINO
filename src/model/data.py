@@ -39,7 +39,7 @@ class ImageDataset(Dataset):
     img=self.transform(img)
     target=self.data_subset['label'].iloc[index]
 
-    return img,target,self.data_subset['file'].iloc[index]
+    return img,target
 
 
 def create_loader(IMAGES_PATH, LABEL_PATH, INDEX_SUBSET=None, BATCH_SIZE=8, num_workers=0, pin_memory=True):

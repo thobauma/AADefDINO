@@ -1,39 +1,60 @@
-Sender: LSF System <lsfadmin@eu-lo-s4-009>
-Subject: Job 197267042: <python pytorchtest.py> in cluster <euler> Exited
+Sender: LSF System <lsfadmin@eu-g2-06>
+Subject: Job 197337862: <python collect_env.py> in cluster <euler> Done
 
-Job <python pytorchtest.py> was submitted from host <eu-login-03> by user <thobauma> in cluster <euler> at Fri Dec 17 15:25:22 2021
-Job was executed on host(s) <eu-lo-s4-009>, in queue <gpu.4h>, as user <thobauma> in cluster <euler> at Fri Dec 17 15:25:45 2021
+Job <python collect_env.py> was submitted from host <eu-login-09> by user <thobauma> in cluster <euler> at Sat Dec 18 12:05:18 2021
+Job was executed on host(s) <eu-g2-06>, in queue <gpu.4h>, as user <thobauma> in cluster <euler> at Sat Dec 18 12:05:26 2021
 </cluster/home/thobauma> was used as the home directory.
 </cluster/home/thobauma/deeplearning/setup> was used as the working directory.
-Started at Fri Dec 17 15:25:45 2021
-Terminated at Fri Dec 17 15:25:49 2021
-Results reported at Fri Dec 17 15:25:49 2021
+Started at Sat Dec 18 12:05:26 2021
+Terminated at Sat Dec 18 12:05:29 2021
+Results reported at Sat Dec 18 12:05:29 2021
 
 Your job looked like:
 
 ------------------------------------------------------------
 # LSBATCH: User input
-python pytorchtest.py
+python collect_env.py
 ------------------------------------------------------------
 
-Exited with exit code 1.
+Successfully completed.
 
 Resource usage summary:
 
-    CPU time :                                   0.35 sec.
-    Max Memory :                                 6 MB
+    CPU time :                                   0.26 sec.
+    Max Memory :                                 9 MB
     Average Memory :                             -
     Total Requested Memory :                     2048.00 MB
-    Delta Memory :                               2042.00 MB
+    Delta Memory :                               2039.00 MB
     Max Swap :                                   -
     Max Processes :                              -
     Max Threads :                                -
-    Run time :                                   18 sec.
-    Turnaround time :                            27 sec.
+    Run time :                                   23 sec.
+    Turnaround time :                            11 sec.
 
 The output (if any) follows:
 
-Traceback (most recent call last):
-  File "pytorchtest.py", line 1, in <module>
-    import torch
-ImportError: No module named torch
+Collecting environment information...
+PyTorch version: N/A
+Is debug build: N/A
+CUDA used to build PyTorch: N/A
+ROCM used to build PyTorch: N/A
+
+OS: CentOS Linux release 7.9.2009 (Core) (x86_64)
+GCC version: (GCC) 4.8.5 20150623 (Red Hat 4.8.5-44)
+Clang version: Could not collect
+CMake version: version 2.8.12.2
+Libc version: glibc-2.2.5
+
+Python version: 2.7.5 (default, Nov 16 2020, 22:23:17)  [GCC 4.8.5 20150623 (Red Hat 4.8.5-44)] (64-bit runtime)
+Python platform: Linux-3.10.0-1160.31.1.el7.x86_64-x86_64-with-centos-7.9.2009-Core
+Is CUDA available: N/A
+CUDA runtime version: Could not collect
+GPU models and configuration: GPU 0: GeForce RTX 2080 Ti
+Nvidia driver version: 450.80.02
+cuDNN version: Could not collect
+HIP runtime version: N/A
+MIOpen runtime version: N/A
+
+Versions of relevant libraries:
+[pip] Could not collect
+[conda] Could not collect
