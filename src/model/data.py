@@ -11,6 +11,8 @@ from typing import List, Callable
 from sklearn import preprocessing
 import os
 
+from src.model.forward_pass import forward_pass
+
 class ImageDataset(Dataset):
   def __init__(self, img_folder: str, file_name: str, transform: callable, class_subset: List[int] = None, index_subset: List[int] = None):
     super().__init__()
@@ -35,13 +37,14 @@ class ImageDataset(Dataset):
     return len(self.data_subset)
   
   def __getitem__(self, index):
-    img = Image.open(Path(self.img_folder,self.data_subset['file'].iloc[index]))
+    filename = self.data_subset['file'].iloc[index]
+    img = Image.open(Path(self.img_folder,filename))
     img = img.convert('RGB')
 
     img=self.transform(img)
     target=self.data_subset['label'].iloc[index]
 
-    return img,target
+    return img, target, filename
 
 
 class AdvTrainingImageDataset(Dataset):
@@ -72,13 +75,14 @@ class AdvTrainingImageDataset(Dataset):
     return len(self.data_subset)
   
   def __getitem__(self, index):
-    img = Image.open(os.path.join(self.img_folder,self.data_subset['file'].iloc[index]))
+    filename = self.data_subset['file'].iloc[index]
+    img = Image.open(os.path.join(self.img_folder,filename))
     img = img.convert('RGB')
 
     img=self.transform(img)
     target=self.data_subset['label'].iloc[index]
 
-    return img,target,self.data_subset['file'].iloc[index]
+    return img, target, filename
 
 
 def create_loader(IMAGES_PATH, LABEL_PATH, INDEX_SUBSET=None, CLASS_SUBSET=None, BATCH_SIZE=8, num_workers=0, pin_memory=True, is_adv_training=False):
@@ -121,3 +125,38 @@ def create_loader(IMAGES_PATH, LABEL_PATH, INDEX_SUBSET=None, CLASS_SUBSET=None,
     
     return org_loader
 
+
+# A Python generator for adversarial samples.
+# Takes original and adversarial loaders, a model, classifier and yields
+# a pair of original and adversarial samples based on the definition above.
+def adv_dataset(org_loader, adv_loader, model, linear_classifier, n=4):
+  linear_classifier.eval()
+  model.eval()
+  for org, adv in zip(org_loader, adv_loader):
+    # parse the original sample
+    org_inp, org_tar, org_img_name = org
+    org_inp = org_inp.to("cuda")
+    org_tar = org_tar.to("cuda")
+
+    # parse the adversarial sample
+    adv_inp, adv_tar, adv_img_name = adv
+    adv_inp = adv_inp.to("cuda")
+    adv_tar = adv_tar.to("cuda")
+
+    # forward pass original and adversarial sample
+    org_pred = forward_pass(org_inp, model, linear_classifier, n)
+    adv_pred = forward_pass(adv_inp, model, linear_classifier, n)
+    
+    # label, original image predicted class, adversarial image predicted class
+    for y, org_y, adv_y, org_x, adv_x, org_name, adv_name in zip(org_tar, org_pred, adv_pred, org_inp, adv_inp, org_img_name, adv_img_name):
+      # yield a new tuple based if the conditions match. skip otherwise.
+      org_correct = y == org_y
+      adv_correct = y == adv_y
+        
+      print(f"org_name: {org_name}, adv_name: {adv_name}")
+      org_num = int(org_name.replace('.JPEG', '').split("_")[-1])
+      adv_num = int(adv_name.replace('.png', '').split("_")[-1])
+      assert org_num == adv_num, f"Numbers are not matching: org={org_name}, adv={adv_name}"
+
+      if org_correct and not adv_correct:
+        yield org_num, org_x, adv_x
