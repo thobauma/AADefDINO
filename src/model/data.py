@@ -83,7 +83,7 @@ class AdvTrainingImageDataset(Dataset):
     return img,target,self.data_subset['file'].iloc[index]
 
 
-def create_loader(IMAGES_PATH, LABEL_PATH, INDEX_SUBSET=None, CLASS_SUBSET=None, BATCH_SIZE=8, num_workers=0, pin_memory=True, is_adv_training=False):
+def create_loader(IMAGES_PATH, LABEL_PATH, INDEX_SUBSET=None, CLASS_SUBSET=None, BATCH_SIZE=8, num_workers=0, pin_memory=True, is_adv_training=False, transform=None):
     # Create loader
     # Taken from official repo: https://github.com/facebookresearch/dino/blob/main/eval_linear.py
     
@@ -93,7 +93,7 @@ def create_loader(IMAGES_PATH, LABEL_PATH, INDEX_SUBSET=None, CLASS_SUBSET=None,
             pth_transforms.CenterCrop(224),
             pth_transforms.ToTensor(),
             pth_transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
-        ])
+        ]) if transform is None else transform
 
         org_dataset = ImageDataset(img_folder = IMAGES_PATH,
                                    file_name = LABEL_PATH,
@@ -105,7 +105,7 @@ def create_loader(IMAGES_PATH, LABEL_PATH, INDEX_SUBSET=None, CLASS_SUBSET=None,
             pth_transforms.Resize(256, interpolation=3),
             pth_transforms.CenterCrop(224),
             pth_transforms.ToTensor(),
-        ])
+        ]) if transform is None else transform
             
         org_dataset = AdvTrainingImageDataset(img_folder = IMAGES_PATH,
                            file_name = LABEL_PATH,
