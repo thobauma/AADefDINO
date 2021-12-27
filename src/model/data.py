@@ -133,19 +133,19 @@ def create_loader(IMAGES_PATH, LABEL_PATH, INDEX_SUBSET=None, CLASS_SUBSET=None,
 # A Python generator for adversarial samples.
 # Takes original and adversarial loaders, a model, classifier and yields
 # a pair of original and adversarial samples based on the definition above.
-def adv_dataset(org_loader, adv_loader, model, linear_classifier, n=4):
+def adv_dataset(org_loader, adv_loader, model, linear_classifier, n=4, device="cuda"):
   linear_classifier.eval()
   model.eval()
   for org, adv in zip(org_loader, adv_loader):
     # parse the original sample
     org_inp, org_tar, org_img_name = org
-    org_inp = org_inp.to("cuda")
-    org_tar = org_tar.to("cuda")
+    org_inp = org_inp.to(device)
+    org_tar = org_tar.to(device)
 
     # parse the adversarial sample
     adv_inp, adv_tar, adv_img_name = adv
-    adv_inp = adv_inp.to("cuda")
-    adv_tar = adv_tar.to("cuda")
+    adv_inp = adv_inp.to(device)
+    adv_tar = adv_tar.to(device)
 
     # forward pass original and adversarial sample
     org_pred = forward_pass(org_inp, model, linear_classifier, n)
