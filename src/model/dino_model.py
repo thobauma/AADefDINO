@@ -43,7 +43,7 @@ class ViTWrapper(torch.nn.Module):
         
         self.vits16.eval()
 
-    def forward(self, x, grad=True):
+    def forward(self, x):
         """
         In the forward function we accept a Tensor of input data and we must return
         a Tensor of output data. We can use Modules defined in the constructor as
