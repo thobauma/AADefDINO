@@ -11,6 +11,25 @@ from typing import List, Callable
 from sklearn import preprocessing
 import os
 
+
+##### DEFINE PRESET TRANSFORMS #####
+ORIGINAL_TRANSFORM = pth_transforms.Compose([
+                                                pth_transforms.Resize(256, interpolation=3),
+                                                pth_transforms.CenterCrop(224),
+                                                pth_transforms.ToTensor(),
+                                                pth_transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+                                            ])
+
+NO_NORM_TRANSFORM = pth_transforms.Compose([
+                                                pth_transforms.Resize(256, interpolation=3),
+                                                pth_transforms.CenterCrop(224),
+                                                pth_transforms.ToTensor(),
+                                            ])
+
+TO_TENSOR_TRANSFORM = pth_transforms.Compose([pth_transforms.ToTensor()])
+
+
+
 class ImageDataset(Dataset):
   def __init__(self, img_folder: str, file_name: str, transform: callable, class_subset: List[int] = None, index_subset: List[int] = None):
     super().__init__()
@@ -41,7 +60,7 @@ class ImageDataset(Dataset):
     img=self.transform(img)
     target=self.data_subset['label'].iloc[index]
 
-    return img,target,self.data_subset['file'].iloc[index]
+    return img,target
 
 
 class AdvTrainingImageDataset(Dataset):
@@ -83,11 +102,11 @@ class AdvTrainingImageDataset(Dataset):
     return img,target,self.data_subset['file'].iloc[index]
 
 
-def create_loader(IMAGES_PATH, LABEL_PATH, INDEX_SUBSET=None, CLASS_SUBSET=None, BATCH_SIZE=8, num_workers=0, pin_memory=True, remove_normalization=False, transform=None):
+def create_loader(IMAGES_PATH, LABEL_PATH, INDEX_SUBSET=None, CLASS_SUBSET=None, BATCH_SIZE=8, num_workers=0, pin_memory=True, is_adversarial_training=False, transform=None):
     # Create loader
     # Taken from official repo: https://github.com/facebookresearch/dino/blob/main/eval_linear.py
     
-    if not remove_normalization:
+    if not is_adversarial_training:
         loader_transform = pth_transforms.Compose([
             pth_transforms.Resize(256, interpolation=3),
             pth_transforms.CenterCrop(224),
@@ -100,7 +119,7 @@ def create_loader(IMAGES_PATH, LABEL_PATH, INDEX_SUBSET=None, CLASS_SUBSET=None,
                                    transform=loader_transform,
                                    index_subset=INDEX_SUBSET,
                                    class_subset=CLASS_SUBSET)
-    elif remove_normalization:
+    elif is_adversarial_training:
         loader_transform = pth_transforms.Compose([
             pth_transforms.Resize(256, interpolation=3),
             pth_transforms.CenterCrop(224),
