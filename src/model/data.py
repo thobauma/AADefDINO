@@ -13,6 +13,23 @@ import os
 
 from src.model.forward_pass import forward_pass
 
+##### DEFINE PRESET TRANSFORMS #####
+ORIGINAL_TRANSFORM = pth_transforms.Compose([
+                                                pth_transforms.Resize(256, interpolation=3),
+                                                pth_transforms.CenterCrop(224),
+                                                pth_transforms.ToTensor(),
+                                                pth_transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+                                            ])
+
+NO_NORM_TRANSFORM = pth_transforms.Compose([
+                                                pth_transforms.Resize(256, interpolation=3),
+                                                pth_transforms.CenterCrop(224),
+                                                pth_transforms.ToTensor(),
+                                            ])
+
+TO_TENSOR_TRANSFORM = pth_transforms.Compose([pth_transforms.ToTensor()])
+
+
 class ImageDataset(Dataset):
   def __init__(self, img_folder: str, file_name: str, transform: callable, class_subset: List[int] = None, index_subset: List[int] = None):
     super().__init__()
