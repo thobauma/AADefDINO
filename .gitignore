@@ -2,3 +2,4 @@ data
 .ipynb_checkpoints
 colabs/old
 __pycache__/
+setup/test.out
