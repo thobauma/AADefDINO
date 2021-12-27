@@ -27,7 +27,7 @@ def get_dino(model_name='vit_small', patch_size=16, n_last_blocks=4, avgpool_pat
     return model, linear_classifier
 
 class ViTWrapper(torch.nn.Module):
-    def __init__(self, vits16, linear_layer, device='cuda', n_last_blocks=4, avgpool_patchtokens=False):
+    def __init__(self, vits16, linear_layer, device='cuda', n_last_blocks=4, avgpool_patchtokens=False, transform=None):
         """
         In the constructor we instantiate two nn.Linear modules and assign them as
         member variables.
@@ -37,9 +37,9 @@ class ViTWrapper(torch.nn.Module):
         self.linear_layer=linear_layer
         self.n_last_blocks = n_last_blocks
         self.avgpool_patchtokens = avgpool_patchtokens
-        self.transform = transform = pth_transforms.Compose([
+        self.transform = pth_transforms.Compose([
             pth_transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
-        ])
+        ]) if transform is None else transform
         
         self.vits16.eval()
 
