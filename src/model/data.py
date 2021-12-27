@@ -153,10 +153,15 @@ def adv_dataset(org_loader, adv_loader, model, linear_classifier, n=4):
       # yield a new tuple based if the conditions match. skip otherwise.
       org_correct = y == org_y
       adv_correct = y == adv_y
+      
+      org_name = org_name.replace('.JPEG', '')
+      adv_name = adv_name.replace('.png', '')
+      adv_name = adv_name.replace('.JPEG', '')
         
-      org_num = int(org_name.replace('.JPEG', '').split("_")[-1])
-      adv_num = int(adv_name.replace('.png', '').split("_")[-1])
+      org_num = int(org_name.split("_")[-1])
+      adv_num = int(adv_name.split("_")[-1])
       assert org_num == adv_num, f"Numbers are not matching: org={org_name}, adv={adv_name}"
 
       if org_correct and not adv_correct:
-        yield org_num, org_x, adv_x
+        yield org_name, org_x, 0 # original => 0
+        yield adv_name, adv_x, 1 # adversarial => 1
