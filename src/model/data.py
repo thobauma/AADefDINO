@@ -106,11 +106,11 @@ class AdvTrainingImageDataset(Dataset):
     return img, target, filename
 
 
-def create_loader(IMAGES_PATH, LABEL_PATH, INDEX_SUBSET=None, CLASS_SUBSET=None, BATCH_SIZE=8, num_workers=0, pin_memory=True, remove_normalization=False, transform=None):
+def create_loader(IMAGES_PATH, LABEL_PATH, INDEX_SUBSET=None, CLASS_SUBSET=None, BATCH_SIZE=8, num_workers=0, pin_memory=True, is_adv_training=False, transform=None):
     # Create loader
     # Taken from official repo: https://github.com/facebookresearch/dino/blob/main/eval_linear.py
     
-    if not remove_normalization:
+    if not is_adv_training:
         loader_transform = pth_transforms.Compose([
             pth_transforms.Resize(256, interpolation=3),
             pth_transforms.CenterCrop(224),
@@ -123,7 +123,7 @@ def create_loader(IMAGES_PATH, LABEL_PATH, INDEX_SUBSET=None, CLASS_SUBSET=None,
                                    transform=loader_transform,
                                    index_subset=INDEX_SUBSET,
                                    class_subset=CLASS_SUBSET)
-    elif remove_normalization:
+    elif is_adv_training:
         loader_transform = pth_transforms.Compose([
             pth_transforms.Resize(256, interpolation=3),
             pth_transforms.CenterCrop(224),
