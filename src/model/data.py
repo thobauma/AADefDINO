@@ -44,28 +44,32 @@ class ImageDataset(Dataset):
     img=self.transform(img)
     target=self.data_subset['label'].iloc[index]
 
+
     return img, target, filename
 
 
+
 class AdvTrainingImageDataset(Dataset):
-  def __init__(self, img_folder: str, file_name: str, transform: callable, class_subset: List[int] = None):
+  def __init__(self, img_folder: str, file_name: str, transform: callable, class_subset: List[int] = None, index_subset: List[int] = None):
     super().__init__()
     # MAP CLASSES TO [0, NUM_CLASSES]
-    self.le = preprocessing.LabelEncoder()
-    self.le.fit([i for i in class_subset])
     self.transform=transform
     self.img_folder=img_folder
     self.data = self.create_df(file_name)
     self.class_subset = class_subset
     if self.class_subset is None:
-      self.data_subset = self.data
+      if index_subset is not None:
+          self.data_subset = self.data.iloc[index_subset]
+      else:
+        self.data_subset = self.data
     else:
-      self.data_subset = self.data[self.data['label'].isin(self.class_subset)]
+      self.le = preprocessing.LabelEncoder()
+      self.le.fit([i for i in class_subset])
+      self.data_subset = self.data[self.data['label'].isin(self.class_subset)] 
+      trans_labels = self.le.transform(self.data_subset['label'])
+      self.data_subset = self.data_subset.rename(columns={'label': 'original_label'})
+      self.data_subset['label'] = trans_labels
 
-    trans_labels = self.le.transform(self.data_subset['label'])
-    self.data_subset = self.data_subset.rename(columns={'label': 'original_label'})
-    self.data_subset['label'] = trans_labels
-  
   def create_df(self, file_name: str):
     df = pd.read_csv(file_name, sep=" ", header=None)
     df.columns=['file', 'label']
@@ -85,36 +89,35 @@ class AdvTrainingImageDataset(Dataset):
     return img, target, filename
 
 
-def create_loader(IMAGES_PATH, LABEL_PATH, INDEX_SUBSET=None, CLASS_SUBSET=None, BATCH_SIZE=8, num_workers=0, pin_memory=True, is_adv_training=False):
+def create_loader(IMAGES_PATH, LABEL_PATH, INDEX_SUBSET=None, CLASS_SUBSET=None, BATCH_SIZE=8, num_workers=0, pin_memory=True, remove_normalization=False, transform=None):
     # Create loader
     # Taken from official repo: https://github.com/facebookresearch/dino/blob/main/eval_linear.py
     
-    if not is_adv_training:
+    if not remove_normalization:
         loader_transform = pth_transforms.Compose([
             pth_transforms.Resize(256, interpolation=3),
             pth_transforms.CenterCrop(224),
             pth_transforms.ToTensor(),
             pth_transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
-        ])
+        ]) if transform is None else transform
 
         org_dataset = ImageDataset(img_folder = IMAGES_PATH,
                                    file_name = LABEL_PATH,
                                    transform=loader_transform,
                                    index_subset=INDEX_SUBSET,
                                    class_subset=CLASS_SUBSET)
-    elif is_adv_training:
-        assert CLASS_SUBSET is not None, "You should specify a CLASS_SUBSET for an adversarial loader"
-        
+    elif remove_normalization:
         loader_transform = pth_transforms.Compose([
             pth_transforms.Resize(256, interpolation=3),
             pth_transforms.CenterCrop(224),
             pth_transforms.ToTensor(),
-        ])
+        ]) if transform is None else transform
             
         org_dataset = AdvTrainingImageDataset(img_folder = IMAGES_PATH,
                            file_name = LABEL_PATH,
                            transform=loader_transform,
-                           class_subset=CLASS_SUBSET)
+                           class_subset=CLASS_SUBSET,
+                           index_subset=INDEX_SUBSET)
 
     org_loader = torch.utils.data.DataLoader(
         org_dataset,
@@ -130,19 +133,19 @@ def create_loader(IMAGES_PATH, LABEL_PATH, INDEX_SUBSET=None, CLASS_SUBSET=None,
 # A Python generator for adversarial samples.
 # Takes original and adversarial loaders, a model, classifier and yields
 # a pair of original and adversarial samples based on the definition above.
-def adv_dataset(org_loader, adv_loader, model, linear_classifier, n=4):
+def adv_dataset(org_loader, adv_loader, model, linear_classifier, n=4, device="cuda"):
   linear_classifier.eval()
   model.eval()
   for org, adv in zip(org_loader, adv_loader):
     # parse the original sample
     org_inp, org_tar, org_img_name = org
-    org_inp = org_inp.to("cuda")
-    org_tar = org_tar.to("cuda")
+    org_inp = org_inp.to(device)
+    org_tar = org_tar.to(device)
 
     # parse the adversarial sample
     adv_inp, adv_tar, adv_img_name = adv
-    adv_inp = adv_inp.to("cuda")
-    adv_tar = adv_tar.to("cuda")
+    adv_inp = adv_inp.to(device)
+    adv_tar = adv_tar.to(device)
 
     # forward pass original and adversarial sample
     org_pred = forward_pass(org_inp, model, linear_classifier, n)
