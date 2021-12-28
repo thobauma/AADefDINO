@@ -185,3 +185,51 @@ def adv_dataset(org_loader, adv_loader, model, linear_classifier, n=4, device="c
       if org_correct and not adv_correct:
         yield org_name, org_x, 0 # original => 0
         yield adv_name, adv_x, 1 # adversarial => 1
+
+
+class CombinedBenchmarkDataset(Dataset):
+  def __init__(self, or_img_folder: str, or_labels: str, or_transform: callable, adv_img_folder: str, adv_labels: str,  adv_transform: callable = None, class_subset: List[int] = None, index_subset: List[int] = None):
+    super().__init__()
+    self.or_transform=or_transform
+    self.adv_transform=adv_transform
+    
+    self.or_img_folder=or_img_folder
+    self.adv_img_folder=adv_img_folder
+    
+    self.or_data = self.create_df(or_labels)
+    self.adv_data = self.create_df(adv_labels)
+    
+    if class_subset is None:
+      if index_subset is not None:
+        self.or_data_subset = self.or_data.iloc[index_subset]
+        self.adv_data_subset = self.adv_data.iloc[index_subset]
+      else:
+        self.or_data_subset = self.or_data
+        self.adv_data_subset = self.adv_data
+    else:
+      self.adv_data_subset = self.adv_data[self.adv_data['label'].isin(class_subset)] 
+      self.or_data_subset = self.or_data[self.or_data['label'].isin(class_subset)] 
+  
+  def create_df(self, file_name: str):
+    df = pd.read_csv(file_name, sep=" ", header=None)
+    df.columns=['file', 'label']
+    return df
+    
+  def __len__(self):
+    return len(self.or_data_subset)
+  
+  def __getitem__(self, index):
+    or_filename = self.or_data_subset['file'].iloc[index]
+    or_img = Image.open(Path(self.or_img_folder,filename))
+    or_img = or_img.convert('RGB')
+    or_img = self.or_transform(or_img)
+    or_target = self.or_data_subset['label'].iloc[index]
+    
+    adv_filename = self.adv_data_subset['file'].iloc[index]
+    adv_img = Image.open(Path(self.adv_img_folder,filename))
+    adv_img = adv_img.convert('RGB')
+    adv_img = self.adv_transform(adv_img)
+    adv_target = self.adv_data_subset['label'].iloc[index]
+
+
+    return (or_img, or_target, or_filename), (adv_img, adv_target, adv_filename)
