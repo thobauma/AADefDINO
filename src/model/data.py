@@ -14,28 +14,34 @@ import os
 from src.model.forward_pass import forward_pass
 
 ##### DEFINE PRESET TRANSFORMS #####
+
+
+# adversarial dataset creation, normalization happens in forwardpass
 ORIGINAL_TRANSFORM = pth_transforms.Compose([
                                                 pth_transforms.Resize(256, interpolation=3),
                                                 pth_transforms.CenterCrop(224),
                                                 pth_transforms.ToTensor(),
-                                                pth_transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
                                             ])
 
-NO_NORM_TRANSFORM = pth_transforms.Compose([
-                                                pth_transforms.Resize(256, interpolation=3),
-                                                pth_transforms.CenterCrop(224),
+
+ADVERSARIAL_TRAINING_TRANSFORM = pth_transforms.Compose([
+                                                pth_transforms.RandomResizedCrop(224),
+                                                pth_transforms.RandomHorizontalFlip(),
                                                 pth_transforms.ToTensor(),
                                             ])
 
-TO_TENSOR_TRANSFORM = pth_transforms.Compose([pth_transforms.ToTensor()])
+# Use with adversarial dataset
+ONLY_NORMALIZE_TRANSFORM = pth_transforms.Compose([
+                                            pth_transforms.ToTensor(),
+                                            ])
 
 
 class ImageDataset(Dataset):
-  def __init__(self, img_folder: str, file_name: str, transform: callable, class_subset: List[int] = None, index_subset: List[int] = None):
+  def __init__(self, img_folder: str, labels_file_name: str, transform: callable, class_subset: List[int] = None, index_subset: List[int] = None):
     super().__init__()
     self.transform=transform
     self.img_folder=img_folder
-    self.data = self.create_df(file_name)
+    self.data = self.create_df(labels_file_name)
     self.class_subset = class_subset
     if self.class_subset is None:
       if index_subset is not None:
@@ -45,8 +51,8 @@ class ImageDataset(Dataset):
     else:
       self.data_subset = self.data[self.data['label'].isin(self.class_subset)] 
   
-  def create_df(self, file_name: str):
-    df = pd.read_csv(file_name, sep=" ", header=None)
+  def create_df(self, labels_file_name: str):
+    df = pd.read_csv(labels_file_name, sep=" ", header=None)
     df.columns=['file', 'label']
     return df
     
@@ -67,12 +73,12 @@ class ImageDataset(Dataset):
 
 
 class AdvTrainingImageDataset(Dataset):
-  def __init__(self, img_folder: str, file_name: str, transform: callable, class_subset: List[int] = None, index_subset: List[int] = None):
+  def __init__(self, img_folder: str, labels_file_name: str, transform: callable, class_subset: List[int] = None, index_subset: List[int] = None):
     super().__init__()
     # MAP CLASSES TO [0, NUM_CLASSES]
     self.transform=transform
     self.img_folder=img_folder
-    self.data = self.create_df(file_name)
+    self.data = self.create_df(labels_file_name)
     self.class_subset = class_subset
     if self.class_subset is None:
       if index_subset is not None:
@@ -87,8 +93,8 @@ class AdvTrainingImageDataset(Dataset):
       self.data_subset = self.data_subset.rename(columns={'label': 'original_label'})
       self.data_subset['label'] = trans_labels
 
-  def create_df(self, file_name: str):
-    df = pd.read_csv(file_name, sep=" ", header=None)
+  def create_df(self, labels_file_name: str):
+    df = pd.read_csv(labels_file_name, sep=" ", header=None)
     df.columns=['file', 'label']
     return df
     
@@ -119,7 +125,7 @@ def create_loader(IMAGES_PATH, LABEL_PATH, INDEX_SUBSET=None, CLASS_SUBSET=None,
         ]) if transform is None else transform
 
         org_dataset = ImageDataset(img_folder = IMAGES_PATH,
-                                   file_name = LABEL_PATH,
+                                   labels_file_name = LABEL_PATH,
                                    transform=loader_transform,
                                    index_subset=INDEX_SUBSET,
                                    class_subset=CLASS_SUBSET)
@@ -131,7 +137,7 @@ def create_loader(IMAGES_PATH, LABEL_PATH, INDEX_SUBSET=None, CLASS_SUBSET=None,
         ]) if transform is None else transform
             
         org_dataset = AdvTrainingImageDataset(img_folder = IMAGES_PATH,
-                           file_name = LABEL_PATH,
+                           labels_file_name = LABEL_PATH,
                            transform=loader_transform,
                            class_subset=CLASS_SUBSET,
                            index_subset=INDEX_SUBSET)
@@ -185,8 +191,7 @@ def adv_dataset(org_loader, adv_loader, model, linear_classifier, n=4, device="c
       if org_correct and not adv_correct:
         yield org_name, org_x, 0 # original => 0
         yield adv_name, adv_x, 1 # adversarial => 1
-
-
+        
 class CombinedBenchmarkDataset(Dataset):
   def __init__(self, or_img_folder: str, or_labels: str, or_transform: callable, adv_img_folder: str, adv_labels: str,  adv_transform: callable = None, class_subset: List[int] = None, index_subset: List[int] = None):
     super().__init__()
@@ -210,8 +215,8 @@ class CombinedBenchmarkDataset(Dataset):
       self.adv_data_subset = self.adv_data[self.adv_data['label'].isin(class_subset)] 
       self.or_data_subset = self.or_data[self.or_data['label'].isin(class_subset)] 
   
-  def create_df(self, file_name: str):
-    df = pd.read_csv(file_name, sep=" ", header=None)
+  def create_df(self, labels_file_name: str):
+    df = pd.read_csv(labels_file_name, sep=" ", header=None)
     df.columns=['file', 'label']
     return df
     

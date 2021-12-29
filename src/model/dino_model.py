@@ -26,8 +26,12 @@ def get_dino(model_name='vit_small', patch_size=16, n_last_blocks=4, avgpool_pat
 #    linear_classifier = nn.parallel.DistributedDataParallel(linear_classifier, device_ids=[arch.gpu])
     return model, linear_classifier
 
+normalize = pth_transforms.Compose([
+            pth_transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+        ])
+
 class ViTWrapper(torch.nn.Module):
-    def __init__(self, vits16, linear_layer, device='cuda', n_last_blocks=4, avgpool_patchtokens=False, transform=None):
+    def __init__(self, vits16, linear_layer, transform=normalize, device='cuda', n_last_blocks=4, avgpool_patchtokens=False, ):
         """
         In the constructor we instantiate two nn.Linear modules and assign them as
         member variables.
@@ -37,9 +41,7 @@ class ViTWrapper(torch.nn.Module):
         self.linear_layer=linear_layer
         self.n_last_blocks = n_last_blocks
         self.avgpool_patchtokens = avgpool_patchtokens
-        self.transform = pth_transforms.Compose([
-            pth_transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
-        ]) if transform is None else transform
+        self.transform = transform
         
         self.vits16.eval()
 
@@ -49,7 +51,8 @@ class ViTWrapper(torch.nn.Module):
         a Tensor of output data. We can use Modules defined in the constructor as
         well as arbitrary operators on Tensors.
         """
-        x = self.transform(x)
+        if self.transform is not None:
+            x = self.transform(x)
 
         # forward
         intermediate_output = self.vits16.get_intermediate_layers(x, self.n_last_blocks)
