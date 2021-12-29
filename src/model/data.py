@@ -16,10 +16,17 @@ from src.model.forward_pass import forward_pass
 ##### DEFINE PRESET TRANSFORMS #####
 
 
-# Adversarial training, adversarial dataset creation, Normalization happens in forwardpass
+# adversarial dataset creation, normalization happens in forwardpass
 ORIGINAL_TRANSFORM = pth_transforms.Compose([
                                                 pth_transforms.Resize(256, interpolation=3),
                                                 pth_transforms.CenterCrop(224),
+                                                pth_transforms.ToTensor(),
+                                            ])
+
+
+ADVERSARIAL_TRAINING_TRANSFORM = pth_transforms.Compose([
+                                                pth_transforms.RandomResizedCrop(224),
+                                                pth_transforms.RandomHorizontalFlip(),
                                                 pth_transforms.ToTensor(),
                                             ])
 
