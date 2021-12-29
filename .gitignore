@@ -1,4 +1,5 @@
 data
+data-*
 .ipynb_checkpoints
 colabs/old
 __pycache__/
