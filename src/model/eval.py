@@ -8,9 +8,16 @@ from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 from dino import utils
 
+def save_output(outputs, names, output_path):
+    for output, name in zip(outputs, names):
+        torch.save(output, Path(output_path, name.split('.')[0]+'.pt'))
+        
+
+
 @torch.no_grad()
-def validate_network_dino(val_loader, model, linear_classifier, n=4, avgpool=False):
+def validate_network_dino(val_loader, model, linear_classifier, n=4, avgpool=False, output_path=None):
     linear_classifier.eval()
+    model.eval()
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = 'Test:'
     if 'num_labels' in dir(linear_classifier):
@@ -35,17 +42,20 @@ def validate_network_dino(val_loader, model, linear_classifier, n=4, avgpool=Fal
                     output = output.reshape(output.shape[0], -1)
             else:
                 output = model(inp)
-        output = linear_classifier(output)
-        loss = nn.CrossEntropyLoss()(output, target)
+        pred = linear_classifier(output)
+        loss = nn.CrossEntropyLoss()(pred, target)
         
-        predicted_labels.extend(output.tolist())
+        if output_path is not None:
+            save_output(output, sample_name, output_path)
+        
+        predicted_labels.extend(pred.tolist())
         true_labels.extend(target.tolist())
         sample_names.extend(sample_name)
         
         if num_labels >= 5:
-            acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
+            acc1, acc5 = utils.accuracy(pred, target, topk=(1, 5))
         else:
-            acc1, = utils.accuracy(output, target, topk=(1,))
+            acc1, = utils.accuracy(pred, target, topk=(1,))
 
         batch_size = inp.shape[0]
         metric_logger.update(loss=loss.item())
