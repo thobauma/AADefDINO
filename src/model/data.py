@@ -156,7 +156,9 @@ def create_loader(IMAGES_PATH, LABEL_PATH, INDEX_SUBSET=None, CLASS_SUBSET=None,
 # A Python generator for adversarial samples.
 # Takes original and adversarial loaders, a model, classifier and yields
 # a pair of original and adversarial samples based on the definition above.
-def adv_dataset(org_loader, adv_loader, model, linear_classifier, n=4, device="cuda"):
+def adv_dataset(org_loader, adv_loader, model, linear_classifier, n=4, device="cuda", verbose=False):
+  if verbose:
+    print("adv_dataset is verbose.")
   linear_classifier.eval()
   model.eval()
   for org, adv in zip(org_loader, adv_loader):
@@ -187,10 +189,14 @@ def adv_dataset(org_loader, adv_loader, model, linear_classifier, n=4, device="c
       org_num = int(org_name.split("_")[-1])
       adv_num = int(adv_name.split("_")[-1])
       assert org_num == adv_num, f"Numbers are not matching: org={org_name}, adv={adv_name}"
-
+        
       if org_correct and not adv_correct:
+        if verbose:
+            print(f"found tuple: {org_name} for prediction {org_y}")
         yield org_name, org_x, 0 # original => 0
         yield adv_name, adv_x, 1 # adversarial => 1
+      elif verbose:
+        print(f"tuple: {org_name} y: {y} org: {org_y} adv: {adv_y} ")
         
 class CombinedBenchmarkDataset(Dataset):
   def __init__(self, or_img_folder: str, or_labels: str, or_transform: callable, adv_img_folder: str, adv_labels: str,  adv_transform: callable = None, class_subset: List[int] = None, index_subset: List[int] = None):
