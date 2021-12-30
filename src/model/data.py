@@ -73,7 +73,7 @@ class ImageDataset(Dataset):
 
 
 class AdvTrainingImageDataset(Dataset):
-  def __init__(self, img_folder: str, labels_file_name: str, transform: callable, class_subset: List[int] = None, index_subset: List[int] = None):
+  def __init__(self, img_folder: str, labels_file_name: str, transform: callable, class_subset: List[int] = None, index_subset: List[int] = None, label_encoder=None):
     super().__init__()
     # MAP CLASSES TO [0, NUM_CLASSES]
     self.transform=transform
@@ -86,12 +86,16 @@ class AdvTrainingImageDataset(Dataset):
       else:
         self.data_subset = self.data
     else:
-      self.le = preprocessing.LabelEncoder()
-      self.le.fit([i for i in class_subset])
-      self.data_subset = self.data[self.data['label'].isin(self.class_subset)] 
-      trans_labels = self.le.transform(self.data_subset['label'])
-      self.data_subset = self.data_subset.rename(columns={'label': 'original_label'})
-      self.data_subset['label'] = trans_labels
+        if label_encoder is None:
+            self.le = preprocessing.LabelEncoder()
+            self.le.fit([i for i in class_subset])
+        else:
+            self.le = label_encoder
+            
+        self.data_subset = self.data[self.data['label'].isin(self.class_subset)] 
+        trans_labels = self.le.transform(self.data_subset['label'])
+        self.data_subset = self.data_subset.rename(columns={'label': 'original_label'})
+        self.data_subset['label'] = trans_labels
 
   def create_df(self, labels_file_name: str):
     df = pd.read_csv(labels_file_name, sep=" ", header=None)
