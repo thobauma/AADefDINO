@@ -82,14 +82,11 @@ def train(model, classifier, train_loader, validation_loader, log_dir=None, tens
         if epoch % val_freq == 0 or epoch == epochs - 1:
             test_stats, metric_logger = validate_network(model, classifier, validation_loader, tensor_dir, adversarial_attack, n, avgpool_patchtokens)
             loggers['validation'].append(metric_logger)
-<<<<<<< HEAD
                 
             print(f"Accuracy at epoch {epoch} of the network on the {len(validation_loader)} test images: {test_stats['acc1']:.1f}%")
-||||||| merged common ancestors
-            print(f"Accuracy at epoch {epoch} of the network on the {len(validation_loader)} test images: {test_stats['acc1']:.1f}%")
-=======
+
             print(f"Accuracy at epoch {epoch} of the network on the {len(validation_loader.dataset)} test images: {test_stats['acc1']:.1f}%")
->>>>>>> d408dac501f4a92dfa1413c8c87841506fc3e735
+
             best_acc = max(best_acc, test_stats["acc1"])
             print(f'Max accuracy so far: {best_acc:.2f}%')
             
@@ -153,15 +150,15 @@ def train_epoch(model, classifier, optimizer, train_loader, tensor_dir=None, adv
         inp = transform(inp)
         
         # forward
-        with torch.no_grad():
-            if 'get_intermediate_layers' in dir(model):
-                intermediate_output = model.get_intermediate_layers(inp, n)
-                output = torch.cat([x[:, 0] for x in intermediate_output], dim=-1)
-                if avgpool:
-                    output = torch.cat((output.unsqueeze(-1), torch.mean(intermediate_output[-1][:, 1:], dim=1).unsqueeze(-1)), dim=-1)
-                    output = output.reshape(output.shape[0], -1)
-            else:
-                output = model(inp)
+#         with torch.no_grad():
+        if 'get_intermediate_layers' in dir(model):
+            intermediate_output = model.get_intermediate_layers(inp, n)
+            output = torch.cat([x[:, 0] for x in intermediate_output], dim=-1)
+            if avgpool:
+                output = torch.cat((output.unsqueeze(-1), torch.mean(intermediate_output[-1][:, 1:], dim=1).unsqueeze(-1)), dim=-1)
+                output = output.reshape(output.shape[0], -1)
+        else:
+            output = model(inp)
 
         # save output      
         if tensor_dir is not None and epoch == 0:
