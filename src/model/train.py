@@ -150,15 +150,15 @@ def train_epoch(model, classifier, optimizer, train_loader, tensor_dir=None, adv
         inp = transform(inp)
         
         # forward
-#         with torch.no_grad():
-        if 'get_intermediate_layers' in dir(model):
-            intermediate_output = model.get_intermediate_layers(inp, n)
-            output = torch.cat([x[:, 0] for x in intermediate_output], dim=-1)
-            if avgpool:
-                output = torch.cat((output.unsqueeze(-1), torch.mean(intermediate_output[-1][:, 1:], dim=1).unsqueeze(-1)), dim=-1)
-                output = output.reshape(output.shape[0], -1)
-        else:
-            output = model(inp)
+        with torch.no_grad():
+            if 'get_intermediate_layers' in dir(model):
+                intermediate_output = model.get_intermediate_layers(inp, n)
+                output = torch.cat([x[:, 0] for x in intermediate_output], dim=-1)
+                if avgpool:
+                    output = torch.cat((output.unsqueeze(-1), torch.mean(intermediate_output[-1][:, 1:], dim=1).unsqueeze(-1)), dim=-1)
+                    output = output.reshape(output.shape[0], -1)
+            else:
+                output = model(inp)
 
         # save output      
         if tensor_dir is not None and epoch == 0:
