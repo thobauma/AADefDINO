@@ -14,9 +14,9 @@ from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms as pth_transforms
 
 from dino import utils
+from src.helpers.helpers import imshow
 
-
-def train(model, classifier, train_loader, validation_loader, log_dir=None, tensor_dir=None, optimizer=None, adversarial_attack=None, epochs=5, val_freq=1, batch_size=16,  lr=0.001, to_restore = {"epoch": 0, "best_acc": 0.}, n=4, avgpool_patchtokens=False, writer=None):
+def train(model, classifier, train_loader, validation_loader, log_dir=None, tensor_dir=None, optimizer=None, adversarial_attack=None, epochs=5, val_freq=1, batch_size=16,  lr=0.001, to_restore = {"epoch": 0, "best_acc": 0.}, n=4, avgpool_patchtokens=False, show_image=False):
     """ Trains a classifier ontop of a base model. The input can be perturbed by selecting an adversarial attack.
         
         :param model: base model (frozen)
@@ -67,7 +67,7 @@ def train(model, classifier, train_loader, validation_loader, log_dir=None, tens
             train_loader.sampler.set_epoch(epoch)
 
         # train epoch
-        train_stats, metric_logger = train_epoch(model, classifier, optimizer, train_loader, tensor_dir, adversarial_attack, epoch, n, avgpool_patchtokens)
+        train_stats, metric_logger = train_epoch(model, classifier, optimizer, train_loader, tensor_dir, adversarial_attack, epoch, n, avgpool_patchtokens, show_image)
         loggers['train'].append(metric_logger)
         scheduler.step()
         
@@ -116,7 +116,7 @@ def train(model, classifier, train_loader, validation_loader, log_dir=None, tens
     
 
 
-def train_epoch(model, classifier, optimizer, train_loader, tensor_dir=None, adversarial_attack=None, epoch=0, n=4, avgpool=False):
+def train_epoch(model, classifier, optimizer, train_loader, tensor_dir=None, adversarial_attack=None, epoch=0, n=4, avgpool=False, show_image=False):
     """ Trains a classifier ontop of a base model. The input can be perturbed by selecting an adversarial attack.
         
         :param model: base model (frozen)
@@ -147,18 +147,18 @@ def train_epoch(model, classifier, optimizer, train_loader, tensor_dir=None, adv
         
         # Normalize
         transform = pth_transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
-        inp = transform(inp)
+        norminp = transform(inp)
         
         # forward
         with torch.no_grad():
             if 'get_intermediate_layers' in dir(model):
-                intermediate_output = model.get_intermediate_layers(inp, n)
+                intermediate_output = model.get_intermediate_layers(norminp, n)
                 output = torch.cat([x[:, 0] for x in intermediate_output], dim=-1)
                 if avgpool:
                     output = torch.cat((output.unsqueeze(-1), torch.mean(intermediate_output[-1][:, 1:], dim=1).unsqueeze(-1)), dim=-1)
                     output = output.reshape(output.shape[0], -1)
             else:
-                output = model(inp)
+                output = model(norminp)
 
         # save output      
         if tensor_dir is not None and epoch == 0:
@@ -183,6 +183,13 @@ def train_epoch(model, classifier, optimizer, train_loader, tensor_dir=None, adv
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
     print("Averaged stats:", metric_logger)
+    
+    # show last image in epoch
+    if show_image:
+        imshow(inp[0].detach())
+        imshow(inp[14].detach())
+        imshow(inp[-1].detach())
+    
     return {k: meter.global_avg for k, meter in metric_logger.meters.items()}, metric_logger
 
 
