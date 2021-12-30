@@ -197,19 +197,22 @@ def validate_network(model, classifier, validation_loader, tensor_dir=None, adve
         # move to gpu
         inp = inp.cuda(non_blocking=True)
         target = target.cuda(non_blocking=True) 
-        
+
+        # Normalize
+        transform = pth_transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
+        norminp = transform(inp)  
         
         # benign
         # forward
         with torch.no_grad():
             if 'get_intermediate_layers' in dir(model):
-                intermediate_output = model.get_intermediate_layers(inp, n)
+                intermediate_output = model.get_intermediate_layers(norminp, n)
                 output = torch.cat([x[:, 0] for x in intermediate_output], dim=-1)
                 if avgpool:
                     output = torch.cat((output.unsqueeze(-1), torch.mean(intermediate_output[-1][:, 1:], dim=1).unsqueeze(-1)), dim=-1)
                     output = output.reshape(output.shape[0], -1)
             else:
-                output = model(inp)
+                output = model(norminp)
                 
             # save output
             if tensor_dir is not None:
