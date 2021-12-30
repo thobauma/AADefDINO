@@ -78,7 +78,7 @@ def train(model, classifier, train_loader, validation_loader, log_dir=None, tens
         if epoch % val_freq == 0 or epoch == epochs - 1:
             test_stats, metric_logger = validate_network(model, classifier, validation_loader, tensor_dir, adversarial_attack, n, avgpool_patchtokens)
             loggers['validation'].append(metric_logger)
-            print(f"Accuracy at epoch {epoch} of the network on the {len(validation_loader)} test images: {test_stats['acc1']:.1f}%")
+            print(f"Accuracy at epoch {epoch} of the network on the {len(validation_loader.dataset)} test images: {test_stats['acc1']:.1f}%")
             best_acc = max(best_acc, test_stats["acc1"])
             print(f'Max accuracy so far: {best_acc:.2f}%')
             log_stats = {**{k: v for k, v in log_stats.items()},
