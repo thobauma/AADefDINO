@@ -16,7 +16,7 @@ from torchvision import transforms as pth_transforms
 from dino import utils
 
 
-def train(model, classifier, train_loader, validation_loader, log_dir=None, tensor_dir=None, optimizer=None, adversarial_attack=None, epochs=5, val_freq=1, batch_size=16,  lr=0.001, to_restore = {"epoch": 0, "best_acc": 0.}, n=4, avgpool_patchtokens=False):
+def train(model, classifier, train_loader, validation_loader, log_dir=None, tensor_dir=None, optimizer=None, adversarial_attack=None, epochs=5, val_freq=1, batch_size=16,  lr=0.001, to_restore = {"epoch": 0, "best_acc": 0.}, n=4, avgpool_patchtokens=False, writer=None):
     """ Trains a classifier ontop of a base model. The input can be perturbed by selecting an adversarial attack.
         
         :param model: base model (frozen)
@@ -70,6 +70,10 @@ def train(model, classifier, train_loader, validation_loader, log_dir=None, tens
         train_stats, metric_logger = train_epoch(model, classifier, optimizer, train_loader, tensor_dir, adversarial_attack, epoch, n, avgpool_patchtokens)
         loggers['train'].append(metric_logger)
         scheduler.step()
+        
+        if writer is not None:
+            for k, v in train_stats.items():
+                writer.add_scalar("Train/{}".format(k), v, epoch)
 
         log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
                      'epoch': epoch}
@@ -78,9 +82,15 @@ def train(model, classifier, train_loader, validation_loader, log_dir=None, tens
         if epoch % val_freq == 0 or epoch == epochs - 1:
             test_stats, metric_logger = validate_network(model, classifier, validation_loader, tensor_dir, adversarial_attack, n, avgpool_patchtokens)
             loggers['validation'].append(metric_logger)
+                
             print(f"Accuracy at epoch {epoch} of the network on the {len(validation_loader)} test images: {test_stats['acc1']:.1f}%")
             best_acc = max(best_acc, test_stats["acc1"])
             print(f'Max accuracy so far: {best_acc:.2f}%')
+            
+            if writer is not None:
+                for k, v in test_stats.items():
+                    writer.add_scalar("Validate/{}".format(k), v, epoch)
+            
             log_stats = {**{k: v for k, v in log_stats.items()},
                          **{f'test_{k}': v for k, v in test_stats.items()}}
         # log
@@ -97,6 +107,7 @@ def train(model, classifier, train_loader, validation_loader, log_dir=None, tens
             torch.save(save_dict, Path(log_dir, "checkpoint.pth.tar"))
     print("Training of the supervised linear classifier on frozen features completed.\n"
                 "Top-1 test accuracy: {acc:.1f}".format(acc=best_acc))
+    writer.flush()
     return loggers
     
     
