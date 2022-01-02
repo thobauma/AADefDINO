@@ -94,10 +94,10 @@ model_wrap = ViTWrapper(model, linear_classifier, device=DEVICE, n_last_blocks=4
 model_wrap = model_wrap.to(DEVICE)
 
 attacks = [
-    (PGD(model_wrap, eps=0.03, alpha=0.015, steps=20), 'pgd_03'),
+    #(PGD(model_wrap, eps=0.03, alpha=0.015, steps=20), 'pgd_03'),
     #(CW(model_wrap, c=50, lr=0.0031, steps=30), 'cw'),
     #(PGDL2(model_wrap, eps=0.03, alpha=0.015, steps=20), 'pgd_l2_03')
-    #(FGSM(model_wrap, eps=0.06), 'fgsm_06')
+    (FGSM(model_wrap, eps=0.06), 'fgsm_06')
 ]
 
 if __name__ == '__main__':
