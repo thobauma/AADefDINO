@@ -295,19 +295,16 @@ def validate_network(model, classifier, validation_loader, tensor_dir=None, adve
         if adversarial_attack is not None:
             print('* adv_Acc@1 {top1.global_avg:.3f} adv_loss {losses.global_avg:.3f}'
           .format(top1=metric_logger.adv_acc1, losses=metric_logger.adv_loss))
-        if path_predictions is not None:
-            data_dict = {"file": names, "true_labels": true_labels, "pred_labels": predicted_labels}
-            if adversarial_attack is not None:
-                data_dict["adv_pred_labels"] =  adv_predicted_labels
-            pd.DataFrame(data_dict).to_csv(path_predictions, sep=",", index=None)
+    if path_predictions is not None:
+        data_dict = {"file": names, "true_labels": true_labels, "pred_labels": predicted_labels}
+        if adversarial_attack is not None:
+            data_dict["adv_pred_labels"] =  adv_predicted_labels
+        pd.DataFrame(data_dict).to_csv(path_predictions, sep=",", index=None)
     return {k: meter.global_avg for k, meter in metric_logger.meters.items()}, metric_logger
 
 
 
 def save_output_batch(batch_out, batch_names, output_dir):
     for out, name in zip(batch_out, batch_names):
-        
         out_path = Path(output_dir,name.split('.')[0]+'.pt')
-#        print('out',out)
-#        print('path', out_path)
         torch.save(out, out_path)
