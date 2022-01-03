@@ -21,7 +21,7 @@ def validate_multihead_network(model,
                                posthoc,
                                adv_classifier,
                                clean_classifier,
-                               clean_validation_loader,
+                               validation_loader,
                                tensor_dir=None, 
                                adversarial_attack=None, 
                                n=4, 
@@ -102,53 +102,8 @@ def validate_multihead_network(model,
         metric_logger.update(loss=loss.item())
         metric_logger.meters['acc1'].update(acc1.item(), n=batch_size)
         if num_labels >= 5:
-            metric_logger.meters['acc5'].update(acc5.item(), n=batch_size)
-        
-#         # adversarial attack
-#         if adversarial_attack is not None:
-#             inp = adversarial_attack(inp, target)
+            metric_logger.meters['acc5'].update(acc5.item(), n=batch_size)    
 
-#             # Normalize
-#             transform = pth_transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
-#             inp = transform(inp)  
-
-#             # forward
-#             with torch.no_grad():
-#                 if 'get_intermediate_layers' in dir(model):
-#                     intermediate_output = model.get_intermediate_layers(inp, n)
-#                     output = torch.cat([x[:, 0] for x in intermediate_output], dim=-1)
-#                     if avgpool:
-#                         output = torch.cat((output.unsqueeze(-1), torch.mean(intermediate_output[-1][:, 1:], dim=1).unsqueeze(-1)), dim=-1)
-#                         output = output.reshape(output.shape[0], -1)
-#                 else:
-#                     output = model(inp)
-
-#                 # save output
-#                 if tensor_dir is not None:
-#                     save_output_batch(output, names, tensor_dir)
-                    
-#                 is_adv = torch.round(posthoc(output))
-#                 if is_adv:
-#                     output = adv_classifier(output)
-#                 else:
-#                     output = clean_classifier(output)
-
-#                 output = classifier(output)
-#                 adv_loss = nn.CrossEntropyLoss()(output, target)
-
-#             if num_labels >= 5:
-#                 adv_acc1, adv_acc5 = utils.accuracy(output, target, topk=(1, 5))
-#             else:
-#                 adv_acc1, = utils.accuracy(output, target, topk=(1,))
-
-#             batch_size = inp.shape[0]
-#             metric_logger.update(adv_loss=adv_loss.item())
-#             metric_logger.meters['adv_acc1'].update(adv_acc1.item(), n=batch_size)
-#             if num_labels >= 5:
-#                 metric_logger.meters['adv_acc5'].update(adv_acc5.item(), n=batch_size)
-
-    
-                
     if num_labels >= 5:
         print('* Acc@1 {top1.global_avg:.3f} Acc@5 {top5.global_avg:.3f} loss {losses.global_avg:.3f}'
           .format(top1=metric_logger.acc1, top5=metric_logger.acc5, losses=metric_logger.loss))
