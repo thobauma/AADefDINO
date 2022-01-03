@@ -94,7 +94,7 @@ linear_classifier.load_state_dict(torch.load("/cluster/scratch/mmathys/dl_data/a
 train_dataset = AdvTrainingImageDataset(TRAIN_IMAGES_PATH, TRAIN_LABEL_PATH, ORIGINAL_TRANSFORM, CLASS_SUBSET, index_subset=None, label_encoder=label_encoder)
 train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, num_workers=NUM_WORKERS, pin_memory=PIN_MEMORY, shuffle=False)
 
-val_dataset = AdvTrainingImageDataset(VAL_IMAGES_PATH, VAL_LABEL_PATH, ORIGINAL_TRANSFORM, None, index_subset=None, label_encoder=label_encoder)
+val_dataset = AdvTrainingImageDataset(VAL_IMAGES_PATH, VAL_LABEL_PATH, ORIGINAL_TRANSFORM, CLASS_SUBSET, index_subset=None, label_encoder=label_encoder)
 val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, num_workers=NUM_WORKERS, pin_memory=PIN_MEMORY,shuffle=False)
 
 
@@ -117,9 +117,9 @@ if __name__ == '__main__':
         print("-"*70)
         print(atk)
 
-        STORE_PATH = Path(MAX_PATH, f'adversarial_data/cw_new/')
-        STORE_LABEL_PATH = Path(STORE_PATH, 'train/labels.txt')
-        STORE_IMAGES_PATH = Path(STORE_PATH, 'train/images/')
+        STORE_PATH = Path(MAX_PATH, f'adversarial_data/cw/')
+        STORE_LABEL_PATH = Path(STORE_PATH, 'validation/labels.txt')
+        STORE_IMAGES_PATH = Path(STORE_PATH, 'validation/images/')
         adv_labels = {}
 
         if not os.path.exists(STORE_IMAGES_PATH):
@@ -129,7 +129,7 @@ if __name__ == '__main__':
         clean_correct = 0
         start = time.time()
 
-        for images, labels, img_names in tqdm(train_loader):
+        for images, labels, img_names in tqdm(val_loader):
 
             labels = labels.cuda(non_blocking=True)
 
