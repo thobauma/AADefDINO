@@ -37,7 +37,13 @@ ONLY_NORMALIZE_TRANSFORM = pth_transforms.Compose([
 
 
 class ImageDataset(Dataset):
-  def __init__(self, img_folder: str, labels_file_name: str, transform: callable, class_subset: List[int] = None, index_subset: List[int] = None):
+  def __init__(self, 
+               img_folder: str, 
+               labels_file_name: str, 
+               transform: callable, 
+               class_subset: List[int] = None, 
+               index_subset: List[int] = None, 
+               label_encoder=None):
     super().__init__()
     self.transform=transform
     self.img_folder=img_folder
@@ -49,7 +55,16 @@ class ImageDataset(Dataset):
       else:
         self.data_subset = self.data
     else:
-      self.data_subset = self.data[self.data['label'].isin(self.class_subset)] 
+        if label_encoder is None:
+            self.le = preprocessing.LabelEncoder()
+            self.le.fit([i for i in class_subset])
+        else:
+            self.le = label_encoder
+            
+        self.data_subset = self.data[self.data['label'].isin(self.class_subset)] 
+        trans_labels = self.le.transform(self.data_subset['label'])
+        self.data_subset = self.data_subset.rename(columns={'label': 'original_label'})
+        self.data_subset['label'] = trans_labels
   
   def create_df(self, labels_file_name: str):
     df = pd.read_csv(labels_file_name, sep=" ", header=None)
@@ -67,13 +82,17 @@ class ImageDataset(Dataset):
     img=self.transform(img)
     target=self.data_subset['label'].iloc[index]
 
-
     return img, target, filename
 
 
-
 class AdvTrainingImageDataset(Dataset):
-  def __init__(self, img_folder: str, labels_file_name: str, transform: callable, class_subset: List[int] = None, index_subset: List[int] = None, label_encoder=None):
+  def __init__(self, 
+               img_folder: str, 
+               labels_file_name: str, 
+               transform: callable, 
+               class_subset: List[int] = None, 
+               index_subset: List[int] = None, 
+               label_encoder=None):
     super().__init__()
     # MAP CLASSES TO [0, NUM_CLASSES]
     self.transform=transform
@@ -116,7 +135,15 @@ class AdvTrainingImageDataset(Dataset):
     return img, target, filename
 
 
-def create_loader(IMAGES_PATH, LABEL_PATH, INDEX_SUBSET=None, CLASS_SUBSET=None, BATCH_SIZE=8, num_workers=0, pin_memory=True, is_adv_training=False, transform=None):
+def create_loader(IMAGES_PATH, 
+                  LABEL_PATH, 
+                  INDEX_SUBSET=None, 
+                  CLASS_SUBSET=None, 
+                  BATCH_SIZE=8, 
+                  num_workers=0, 
+                  pin_memory=True, 
+                  is_adv_training=False, 
+                  transform=None):
     # Create loader
     # Taken from official repo: https://github.com/facebookresearch/dino/blob/main/eval_linear.py
     

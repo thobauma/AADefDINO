@@ -16,7 +16,9 @@ from torchvision import transforms as pth_transforms
 from dino import utils
 
 
-def train(model, classifier, train_loader, validation_loader, log_dir=None, tensor_dir=None, optimizer=None, criterion=nn.CrossEntropyLoss(), adversarial_attack=None, epochs=5, val_freq=1, batch_size=64,  lr=0.001, to_restore = {"epoch": 0, "best_acc": 0.}, n=4, avgpool_patchtokens=False):
+
+def train(model, classifier, train_loader, validation_loader, log_dir=None, tensor_dir=None, optimizer=None, criterion=nn.CrossEntropyLoss(), adversarial_attack=None, epochs=5, val_freq=1, batch_size=16,  lr=0.001, to_restore = {"epoch": 0, "best_acc": 0.}, n=4, avgpool_patchtokens=False):
+
     """ Trains a classifier ontop of a base model. The input can be perturbed by selecting an adversarial attack.
         
         :param model: base model (frozen)
