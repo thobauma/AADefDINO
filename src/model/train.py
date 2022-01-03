@@ -14,9 +14,11 @@ from torch.utils.tensorboard import SummaryWriter
 from torchvision import transforms as pth_transforms
 
 from dino import utils
-from src.helpers.helpers import imshow
 
-def train(model, classifier, train_loader, validation_loader, log_dir=None, tensor_dir=None, optimizer=None, adversarial_attack=None, epochs=5, val_freq=1, batch_size=16,  lr=0.001, to_restore = {"epoch": 0, "best_acc": 0.}, n=4, avgpool_patchtokens=False, show_image=False, writer=None):
+
+
+def train(model, classifier, train_loader, validation_loader, log_dir=None, tensor_dir=None, optimizer=None, criterion=nn.CrossEntropyLoss(), adversarial_attack=None, epochs=5, val_freq=1, batch_size=16,  lr=0.001, to_restore = {"epoch": 0, "best_acc": 0.}, n=4, avgpool_patchtokens=False):
+
     """ Trains a classifier ontop of a base model. The input can be perturbed by selecting an adversarial attack.
         
         :param model: base model (frozen)
@@ -36,9 +38,10 @@ def train(model, classifier, train_loader, validation_loader, log_dir=None, tens
         :param avgpool_patchtokens: from DINO. Default: False
         
     """
-    model.cuda()
-    model.eval()
-    
+    if model is not None:
+        model.cuda()
+        model.eval()
+    classifier.cuda()
     if optimizer is None:
         optimizer = torch.optim.SGD(
             classifier.parameters(),
@@ -46,10 +49,11 @@ def train(model, classifier, train_loader, validation_loader, log_dir=None, tens
             momentum=0.9,
             weight_decay=0, # we do not apply weight decay
         )
-
+    
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs, eta_min=0)
     
     # Optionally resume from a checkpoint
+    log_dir.mkdir(parents=True, exist_ok=True)
     utils.restart_from_checkpoint(
         Path(log_dir, "checkpoint.pth.tar"),
         run_variables=to_restore,
@@ -67,33 +71,36 @@ def train(model, classifier, train_loader, validation_loader, log_dir=None, tens
             train_loader.sampler.set_epoch(epoch)
 
         # train epoch
-        train_stats, metric_logger = train_epoch(model, classifier, optimizer, train_loader, tensor_dir, adversarial_attack, epoch, n, avgpool_patchtokens, show_image)
+        train_stats, metric_logger = train_epoch(model=model, 
+                                                 classifier=classifier, 
+                                                 optimizer=optimizer, 
+                                                 criterion=criterion,
+                                                 train_loader=train_loader, 
+                                                 tensor_dir=tensor_dir, 
+                                                 adversarial_attack=adversarial_attack, 
+                                                 epoch=epoch, 
+                                                 n=n, 
+                                                 avgpool_patchtokens=avgpool_patchtokens)
         loggers['train'].append(metric_logger)
         scheduler.step()
-        
-        if writer is not None:
-            for k, v in train_stats.items():
-                writer.add_scalar("Train/{}".format(k), v, epoch)
 
         log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
                      'epoch': epoch}
         
         # validate
         if epoch % val_freq == 0 or epoch == epochs - 1:
-            test_stats, metric_logger = validate_network(model, classifier, validation_loader, tensor_dir, adversarial_attack, n, avgpool_patchtokens)
+            test_stats, metric_logger = validate_network(model=model, 
+                                                         classifier=classifier, 
+                                                         validation_loader=validation_loader, 
+                                                         criterion=criterion,
+                                                         tensor_dir=tensor_dir, 
+                                                         adversarial_attack=adversarial_attack, 
+                                                         n=n, 
+                                                         avgpool_patchtokens=avgpool_patchtokens)
             loggers['validation'].append(metric_logger)
-                
             print(f"Accuracy at epoch {epoch} of the network on the {len(validation_loader)} test images: {test_stats['acc1']:.1f}%")
-
-            print(f"Accuracy at epoch {epoch} of the network on the {len(validation_loader.dataset)} test images: {test_stats['acc1']:.1f}%")
-
             best_acc = max(best_acc, test_stats["acc1"])
             print(f'Max accuracy so far: {best_acc:.2f}%')
-            
-            if writer is not None:
-                for k, v in test_stats.items():
-                    writer.add_scalar("Validate/{}".format(k), v, epoch)
-            
             log_stats = {**{k: v for k, v in log_stats.items()},
                          **{f'test_{k}': v for k, v in test_stats.items()}}
         # log
@@ -110,13 +117,12 @@ def train(model, classifier, train_loader, validation_loader, log_dir=None, tens
             torch.save(save_dict, Path(log_dir, "checkpoint.pth.tar"))
     print("Training of the supervised linear classifier on frozen features completed.\n"
                 "Top-1 test accuracy: {acc:.1f}".format(acc=best_acc))
-    writer.flush()
     return loggers
     
     
 
 
-def train_epoch(model, classifier, optimizer, train_loader, tensor_dir=None, adversarial_attack=None, epoch=0, n=4, avgpool=False, show_image=False):
+def train_epoch(model, classifier, train_loader, optimizer, criterion=nn.CrossEntropyLoss(), tensor_dir=None, adversarial_attack=None, epoch=0,n=4, avgpool_patchtokens=False):
     """ Trains a classifier ontop of a base model. The input can be perturbed by selecting an adversarial attack.
         
         :param model: base model (frozen)
@@ -145,29 +151,25 @@ def train_epoch(model, classifier, optimizer, train_loader, tensor_dir=None, adv
         if adversarial_attack is not None:
             inp = adversarial_attack(inp, target)
         
-        # Normalize
-        transform = pth_transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
-        norminp = transform(inp)
-        
-        # forward
-        with torch.no_grad():
-            if 'get_intermediate_layers' in dir(model):
-                intermediate_output = model.get_intermediate_layers(norminp, n)
-                output = torch.cat([x[:, 0] for x in intermediate_output], dim=-1)
-                if avgpool:
-                    output = torch.cat((output.unsqueeze(-1), torch.mean(intermediate_output[-1][:, 1:], dim=1).unsqueeze(-1)), dim=-1)
-                    output = output.reshape(output.shape[0], -1)
-            else:
-                output = model(norminp)
-
-        # save output      
-        if tensor_dir is not None and epoch == 0:
-            save_output_batch(output, names, tensor_dir)
-        
-        output = classifier(output)
-
+        if model is not None:
+            # forward
+            with torch.no_grad():
+                model_output = model_forward(model, inp, n, avgpool_patchtokens)
+                
+            # save output      
+            if tensor_dir is not None and epoch == 0:
+                save_output_batch(model_output, names, tensor_dir)
+            
+            output = classifier(model_output)
+            
+        else:
+            output = classifier(inp)
+            
         # compute cross entropy loss
-        loss = nn.CrossEntropyLoss()(output, target)
+#        print(f'''classifier dev: {classifier.device}''')
+#        print(f'''output dev: {output.device}''')
+#        print(f'''target dev: {target.device}''')
+        loss = criterion(output, target)
 
         # compute the gradients
         optimizer.zero_grad()
@@ -183,17 +185,10 @@ def train_epoch(model, classifier, optimizer, train_loader, tensor_dir=None, adv
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
     print("Averaged stats:", metric_logger)
-    
-    # show last image in epoch
-    if show_image:
-        imshow(inp[0].detach())
-        imshow(inp[14].detach())
-        imshow(inp[-1].detach())
-    
     return {k: meter.global_avg for k, meter in metric_logger.meters.items()}, metric_logger
 
 
-def validate_network(model, classifier, validation_loader, tensor_dir=None, adversarial_attack=None, n=4, avgpool=False):
+def validate_network(model, classifier, validation_loader, criterion=nn.CrossEntropyLoss(), tensor_dir=None, adversarial_attack=None, n=4, avgpool_patchtokens=False, path_predictions=None):
     """ Validates a classifier
         
         :param model: base model (frozen)
@@ -205,7 +200,8 @@ def validate_network(model, classifier, validation_loader, tensor_dir=None, adve
         :param avgpool_patchtokens: from DINO. Default: False
         
     """
-    model.eval()
+    if model is not None:
+        model.eval()
     classifier.eval()
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = 'Test:'
@@ -213,40 +209,42 @@ def validate_network(model, classifier, validation_loader, tensor_dir=None, adve
         num_labels = classifier.num_labels
     else:
         num_labels = classifier.module.num_labels
-    for inp, target, names in metric_logger.log_every(validation_loader, 20, header):
+    if path_predictions is not None:
+        print(f'''saving predictions to: {path_predictions}''')
+        path_predictions.parent.mkdir(parents=True, exist_ok=True)
+        names = []
+        true_labels = []
+        predicted_labels = []
+        if adversarial_attack is not None:
+            adv_predicted_labels = []
+    if tensor_dir is not None:
+        tensor_dir.mkdir(parents=True, exist_ok=True)
+    for inp, target, batch_names in metric_logger.log_every(validation_loader, 20, header):
 
         # move to gpu
         inp = inp.cuda(non_blocking=True)
         target = target.cuda(non_blocking=True) 
 
-        # Normalize
-        transform = pth_transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
-        norminp = transform(inp)  
-        
         # benign
         # forward
         with torch.no_grad():
-            if 'get_intermediate_layers' in dir(model):
-                intermediate_output = model.get_intermediate_layers(norminp, n)
-                output = torch.cat([x[:, 0] for x in intermediate_output], dim=-1)
-                if avgpool:
-                    output = torch.cat((output.unsqueeze(-1), torch.mean(intermediate_output[-1][:, 1:], dim=1).unsqueeze(-1)), dim=-1)
-                    output = output.reshape(output.shape[0], -1)
-            else:
-                output = model(norminp)
+            if model is not None:
+                model_output = model_forward(model, inp, n, avgpool_patchtokens)
                 
-            # save output
-            if tensor_dir is not None:
-                save_output_batch(output, names, tensor_dir)
+                # save output
+                if tensor_dir is not None:
+                    save_output_batch(model_output, batch_names, tensor_dir)
+                
+                output = classifier(model_output)
+            else:
+                output = classifier(inp)
 
-            output = classifier(output)
-            loss = nn.CrossEntropyLoss()(output, target)
+            loss = criterion(output, target)
         
         if num_labels >= 5:
             acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
         else:
             acc1, = utils.accuracy(output, target, topk=(1,))
-
         batch_size = inp.shape[0]
         metric_logger.update(loss=loss.item())
         metric_logger.meters['acc1'].update(acc1.item(), n=batch_size)
@@ -256,40 +254,39 @@ def validate_network(model, classifier, validation_loader, tensor_dir=None, adve
         # adversarial attack
         if adversarial_attack is not None:
             inp = adversarial_attack(inp, target)
-
-            # Normalize
-            transform = pth_transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
-            inp = transform(inp)  
-
+            
             # forward
             with torch.no_grad():
-                if 'get_intermediate_layers' in dir(model):
-                    intermediate_output = model.get_intermediate_layers(inp, n)
-                    output = torch.cat([x[:, 0] for x in intermediate_output], dim=-1)
-                    if avgpool:
-                        output = torch.cat((output.unsqueeze(-1), torch.mean(intermediate_output[-1][:, 1:], dim=1).unsqueeze(-1)), dim=-1)
-                        output = output.reshape(output.shape[0], -1)
+                if model is not None:
+                    model_output = model_forward(model, inp, n, )
+
+                    # save output
+                    if tensor_dir is not None:
+                        save_output_batch(Path(model_output,'adv'), batch_names, tensor_dir)
+                    
+                    adv_output = classifier(model_output)
+                    
                 else:
-                    output = model(inp)
-
-                # save output
-                if tensor_dir is not None:
-                    save_output_batch(output, names, tensor_dir)
-
-                output = classifier(output)
-                adv_loss = nn.CrossEntropyLoss()(output, target)
+                    adv_output = classifier(inp)
+                    
+                adv_loss = criterion(adv_output, target)
 
             if num_labels >= 5:
-                adv_acc1, adv_acc5 = utils.accuracy(output, target, topk=(1, 5))
+                adv_acc1, adv_acc5 = utils.accuracy(adv_output, target, topk=(1, 5))
             else:
-                adv_acc1, = utils.accuracy(output, target, topk=(1,))
+                adv_acc1, = utils.accuracy(adv_output, target, topk=(1,))
 
             batch_size = inp.shape[0]
             metric_logger.update(adv_loss=adv_loss.item())
             metric_logger.meters['adv_acc1'].update(adv_acc1.item(), n=batch_size)
             if num_labels >= 5:
                 metric_logger.meters['adv_acc5'].update(adv_acc5.item(), n=batch_size)
-                
+        if path_predictions is not None:
+            names.extend(batch_names)
+            true_labels.extend(target.tolist())
+            predicted_labels.extend(torch.argmax(output,-1).tolist())
+            if adversarial_attack is not None:
+                adv_predicted_labels.extend(torch.argmax(adv_output,-1).tolist())
     if num_labels >= 5:
         print('* Acc@1 {top1.global_avg:.3f} Acc@5 {top5.global_avg:.3f} loss {losses.global_avg:.3f}'
           .format(top1=metric_logger.acc1, top5=metric_logger.acc5, losses=metric_logger.loss))
@@ -302,10 +299,33 @@ def validate_network(model, classifier, validation_loader, tensor_dir=None, adve
         if adversarial_attack is not None:
             print('* adv_Acc@1 {top1.global_avg:.3f} adv_loss {losses.global_avg:.3f}'
           .format(top1=metric_logger.adv_acc1, losses=metric_logger.adv_loss))
+    if path_predictions is not None:
+        data_dict = {"file": names, "true_labels": true_labels, "pred_labels": predicted_labels}
+        if adversarial_attack is not None:
+            data_dict["adv_pred_labels"] =  adv_predicted_labels
+        pd.DataFrame(data_dict).to_csv(path_predictions, sep=",", index=None)
     return {k: meter.global_avg for k, meter in metric_logger.meters.items()}, metric_logger
 
 
 
 def save_output_batch(batch_out, batch_names, output_dir):
+    batch_out.cpu()
     for out, name in zip(batch_out, batch_names):
-        torch.save(out, Path(output_dir,name.split('.')[0]+'.pt'))
+        out_path = Path(output_dir,name.split('.')[0]+'.pt')
+        torch.save(out, out_path)
+
+
+
+def model_forward(model, inp, n=4, avgpool=False):
+    # Normalize
+    transform = pth_transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
+    inp = transform(inp)  
+
+    if 'get_intermediate_layers' in dir(model):
+        intermediate_output = model.get_intermediate_layers(inp, n)
+        model_output = torch.cat([x[:, 0] for x in intermediate_output], dim=-1)
+        if avgpool:
+            model_output = torch.cat((model_output.unsqueeze(-1), torch.mean(intermediate_output[-1][:, 1:], dim=1).unsqueeze(-1)), dim=-1)
+            return model_output.reshape(model_output.shape[0], -1)
+    else:
+        return model(inp)
