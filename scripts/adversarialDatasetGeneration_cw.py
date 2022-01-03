@@ -25,6 +25,8 @@ import torch.optim as optim
 from torchvision import transforms as pth_transforms
 from torchvision.utils import save_image
 
+
+
 class LinearClassifier(nn.Module):
     """Linear layer to train on top of frozen features"""
     def __init__(self, dim, num_labels=1000):
@@ -70,6 +72,13 @@ NUM_WORKERS= 0
 PIN_MEMORY=True
 CLASS_SUBSET = np.load(CLASS_SUBSET_PATH)
 
+
+from sklearn import preprocessing
+
+label_encoder = preprocessing.LabelEncoder()
+label_encoder.fit([i for i in CLASS_SUBSET])
+
+
 BATCH_SIZE = 32
 
 DEVICE = 'cuda'
@@ -82,11 +91,11 @@ linear_classifier = LinearClassifier(linear_classifier.linear.in_features,
 
 linear_classifier.load_state_dict(torch.load("/cluster/scratch/mmathys/dl_data/adversarial_data/adv_classifiers/25_classes" + "/" + "clean.pt"))
 
-train_dataset = ImageDataset(TRAIN_IMAGES_PATH, TRAIN_LABEL_PATH, ORIGINAL_TRANSFORM, CLASS_SUBSET, index_subset=None)
+train_dataset = AdvTrainingImageDataset(TRAIN_IMAGES_PATH, TRAIN_LABEL_PATH, ORIGINAL_TRANSFORM, CLASS_SUBSET, index_subset=None, label_encoder=label_encoder)
 train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, num_workers=NUM_WORKERS, pin_memory=PIN_MEMORY, shuffle=False)
 
-val_dataset = ImageDataset(VAL_IMAGES_PATH, VAL_LABEL_PATH, ORIGINAL_TRANSFORM, None, index_subset=None)
-val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, num_workers=NUM_WORKERS, pin_memory=PIN_MEMORY, shuffle=False)
+val_dataset = AdvTrainingImageDataset(VAL_IMAGES_PATH, VAL_LABEL_PATH, ORIGINAL_TRANSFORM, None, index_subset=None, label_encoder=label_encoder)
+val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, num_workers=NUM_WORKERS, pin_memory=PIN_MEMORY,shuffle=False)
 
 
 model_wrap = ViTWrapper(model, linear_classifier, device=DEVICE, n_last_blocks=4, avgpool_patchtokens=False)
@@ -108,7 +117,7 @@ if __name__ == '__main__':
         print("-"*70)
         print(atk)
 
-        STORE_PATH = Path(MAX_PATH, f'adversarial_data_new/{name}')
+        STORE_PATH = Path(MAX_PATH, f'adversarial_data/cw_new/')
         STORE_LABEL_PATH = Path(STORE_PATH, 'train/labels.txt')
         STORE_IMAGES_PATH = Path(STORE_PATH, 'train/images/')
         adv_labels = {}
