@@ -25,7 +25,8 @@ def validate_multihead_network(model,
                                tensor_dir=None, 
                                adversarial_attack=None, 
                                n=4, 
-                               avgpool=False):
+                               avgpool=False,
+                               path_predictions=None):
     """ Validates a classifier
         
         :param model: base model (frozen)
@@ -103,7 +104,12 @@ def validate_multihead_network(model,
         metric_logger.meters['acc1'].update(acc1.item(), n=batch_size)
         if num_labels >= 5:
             metric_logger.meters['acc5'].update(acc5.item(), n=batch_size)    
-
+        if path_predictions is not None:
+            names.extend(names)
+            true_labels.extend(target.tolist())
+            predicted_labels.extend(torch.argmax(output,-1).tolist())
+            if adversarial_attack is not None:
+                adv_predicted_labels.extend(torch.argmax(adv_output,-1).tolist())
     if num_labels >= 5:
         print('* Acc@1 {top1.global_avg:.3f} Acc@5 {top5.global_avg:.3f} loss {losses.global_avg:.3f}'
           .format(top1=metric_logger.acc1, top5=metric_logger.acc5, losses=metric_logger.loss))
@@ -116,5 +122,10 @@ def validate_multihead_network(model,
         if adversarial_attack is not None:
             print('* adv_Acc@1 {top1.global_avg:.3f} adv_loss {losses.global_avg:.3f}'
           .format(top1=metric_logger.adv_acc1, losses=metric_logger.adv_loss))
+    if path_predictions is not None:
+        data_dict = {"file": names, "true_labels": true_labels, "pred_labels": predicted_labels}
+        if adversarial_attack is not None:
+            data_dict["adv_pred_labels"] =  adv_predicted_labels
+        pd.DataFrame(data_dict).to_csv(path_predictions, sep=",", index=None)
         
     return {k: meter.global_avg for k, meter in metric_logger.meters.items()}, metric_logger
