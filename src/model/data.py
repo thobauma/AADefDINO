@@ -119,6 +119,31 @@ class PosthocForwardDataset(Dataset):
     return img, target, filename
 
 
+class PosthocTrainDataset(torch.utils.data.Dataset):
+    def __init__(self, 
+                 or_img_folder, 
+                 adv_img_folder, 
+                 index_df):
+        super().__init__()
+        self.or_img_folder = or_img_folder
+        self.adv_img_folder = adv_img_folder
+        self.index_df = index_df
+        
+    def __len__(self):
+        return len(self.index_df)*2
+    
+    def __getitem__(self, index):            
+        filename = self.index_df['file'].iloc[index%len(self.index_df)]
+        filename = filename.split('.')[0]+'.pt'
+        if index >= len(self.index_df):
+            payload = torch.load(Path(self.or_img_folder, filename)).cpu()
+            label = 0 
+        else:
+            payload = torch.load(Path(self.adv_img_folder, filename)).cpu()
+            label = 1 
+        return payload, label, filename
+
+
 
 class AdvTrainingImageDataset(Dataset):
     def __init__(self, 
