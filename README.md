@@ -3,6 +3,7 @@
 Contents:
 
 ```
+├── data_dir                    Directory in which all the data, models and labels are stored
 ├── dino                        DINO git submodule
 ├── notebooks                   Various notebooks
 │   └── 2012_2017_labels_map    ImageNet class mapping
@@ -14,13 +15,21 @@ Contents:
 
 ## Pipeline
 
+### Preparing ImageNet
+- Download the train and the validation set of the ILSVRC2012 challenge from [ImageNet](https://image-net.org).
+- Move all the training samples into `data_dir/ori/train/images`
+- Move all the validation samples into `data_dir/ori/validation/images`
+
+DINO used a different class mapping then the one in the ILSVRC2012 challenge.
+The corrected labels are stored in `data_dir/ori/train/labels.csv` and `data_dir/ori/validation/labels.csv` respectively.
+In order to map the ILSVRC2012 labels to the ones DINO used download the development kit ILSVRC2012_devkit_t12 from [ImageNet](https://image-net.org) and eecute the code in `notebooks/get_train_labels.ipynb` and `2012_2017_labels_map/`.
+- `2012_2017_labels_map/`: notebook and mapping of the ImageNet classes from 2012 to 2017, with a notebook to generate those mappings contained in this folder.
+- `notebooks/createDataSubset.ipynb`: we used a subset of 25 ImageNet classes. This notebooks creates the index for the subset. The created subset is stored in `data_dir/ori/class_subset.npy`
+
 ### Adversarial Dataset Generation
 
-This step prepares the dataset and generates the adversarial attacks (PGD, CW and FGSM) which are saved as tensors. 
+Here the adversarial attacks (PGD, CW and FGSM) are generated and saved as tensors. 
 
-- Download ImageNet train and validation set.
-- `2012_2017_labels_map/`: notebook and mapping of the ImageNet classes from 2012 to 2017, with a notebook to generate those mappings contained in this folder.
-- `notebooks/createDataSubset.ipynb`: we used a subset of 25 ImageNet classes. This notebooks creates the index for the subset.
 - `notebooks/emsemble.ipynb` (part): trains and saves the custom classifier head for our ImageNet subset. This is required since the classification head from the original DINO model is trained on the full ImageNet dataset which contains 1000 classes.
 - `scripts/adversarialDatasetGeneration.py`: generates and saves adversarial dataset for PGD, CW and FGSM.
 - `notebooks/AdversarialBenchmark.ipynb`: calculates the accuracy of DINO for the generated adversarial dataset.
