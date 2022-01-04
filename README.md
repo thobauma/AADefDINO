@@ -3,12 +3,13 @@
 Contents:
 
 ```
-.
-├── dino
-├── notebooks
-├── scripts
-├── setup
-└── src
+├── dino                        DINO git submodule
+├── notebooks                   Various notebooks
+│   └── 2012_2017_labels_map    ImageNet class mapping
+├── scripts                     Various scripts
+└── src                         Main code, supporting notebooks and scripts
+    ├── helpers                 
+    └── model
 ```
 
 ## Pipeline
