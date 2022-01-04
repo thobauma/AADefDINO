@@ -89,7 +89,7 @@ model, dino_classifier = get_dino()
 linear_classifier = LinearClassifier(dino_classifier.linear.in_features, 
                          num_labels=len(CLASS_SUBSET))
 
-linear_classifier.load_state_dict(torch.load("/cluster/scratch/mmathys/dl_data/adversarial_data/adv_classifiers/25_classes" + "/" + "clean.pt"))
+linear_classifier.load_state_dict(torch.load(Path(DATA_PATH,'adversarial_data','adv_classifiers','25_classes','clean.pt')))
 linear_classifier.cuda()
 
 
