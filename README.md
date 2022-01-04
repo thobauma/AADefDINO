@@ -16,7 +16,7 @@ This step prepares the dataset and generates the adversarial attacks (PGD, CW an
 
 This step performs the adversarial training on the DINO classification head.
 
-- `adversarialTraining.ipynb`: performs adversarial training.
+- `/scripts/adversarialTraining.py`: performs adversarial training.
 
 ### Posthoc classifier
 
@@ -38,6 +38,6 @@ The ensemble model uses the posthoc classifier to defend against adversarial att
 
 ### Various
 
-This notebook was used to calculate the accuracy of the (unmodified) DINO model against the considered adversarial attacks (PGD, CW, FGSM).
+This notebook was used to calculate the accuracy of the (unmodified) DINO model and the supervised ViT against the considered adversarial attacks (PGD, CW, FGSM).
 
 - `AdversarialBenchmark.ipynb`: launch attacks on DINO and generate accuracies for different attack parameters
