@@ -143,8 +143,29 @@ class PosthocTrainDataset(torch.utils.data.Dataset):
             label = 1 
         return payload, label, filename
 
+class EnsembleDataset(torch.utils.data.Dataset):
+    def __init__(self, 
+                 img_folder, 
+                 df_path):
+        super().__init__()
+        self.img_folder = img_folder
+        self.data = self.create_df(df_path)
+    
+    def create_df(self, labels_file_name: str):
+        df = pd.read_csv(labels_file_name)
+        return df
+    
+    def __len__(self):
+        return len(self.data)
+    
+    def __getitem__(self, index):            
+        filename = self.index_df['file'].iloc[index]
+        filename = filename.split('.')[0]+'.pt'
+        payload = torch.load(Path(self.img_folder, filename)).cpu()
+        target=self.data_subset['true_labels'].iloc[index]
+        return payload, label, filename
 
-
+    
 class AdvTrainingImageDataset(Dataset):
     def __init__(self, 
                    img_folder: str, 
