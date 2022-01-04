@@ -17,12 +17,12 @@ Contents:
 
 This step prepares the dataset and generates the adversarial attacks (PGD, CW and FGSM) which are saved as tensors. 
 
-- Download ImageNet train and validation set: see `setup/urls.txt`.
+- Download ImageNet train and validation set.
 - `2012_2017_labels_map/`: notebook and mapping of the ImageNet classes from 2012 to 2017, with a notebook to generate those mappings contained in this folder.
 - `notebooks/createDataSubset.ipynb`: we used a subset of 25 ImageNet classes. This notebooks creates the index for the subset.
 - `notebooks/emsemble.ipynb` (part): trains and saves the custom classifier head for our ImageNet subset. This is required since the classification head from the original DINO model is trained on the full ImageNet dataset which contains 1000 classes.
 - `scripts/adversarialDatasetGeneration.py`: generates and saves adversarial dataset for PGD, CW and FGSM.
-- `AdversarialBenchmark.ipynb`: calculates the accuracy of DINO for the generated adversarial dataset.
+- `notebooks/AdversarialBenchmark.ipynb`: calculates the accuracy of DINO for the generated adversarial dataset.
 
 ### Adversarial Training
 
