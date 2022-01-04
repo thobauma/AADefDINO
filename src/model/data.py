@@ -162,7 +162,7 @@ class EnsembleDataset(torch.utils.data.Dataset):
         filename = self.data['file'].iloc[index]
         filename = filename.split('.')[0]
         payload = torch.load(Path(self.img_folder, filename)).cpu()
-        target=self.data_subset['true_labels'].iloc[index]
+        target=self.data['true_labels'].iloc[index]
         return payload, label, filename
 
     
