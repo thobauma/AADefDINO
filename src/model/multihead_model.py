@@ -53,8 +53,17 @@ def validate_multihead_network(model,
     else:
         num_labels = clean_classifier.module.num_labels
     
+    if path_predictions is not None:
+        print(f'''saving predictions to: {path_predictions}''')
+        path_predictions.parent.mkdir(parents=True, exist_ok=True)
+        names = []
+        true_labels = []
+        predicted_labels = []
+        if adversarial_attack is not None:
+            adv_predicted_labels = []
+    
     # validation
-    for inp, target, names in metric_logger.log_every(validation_loader, 5, header):
+    for inp, target, batch_names in metric_logger.log_every(validation_loader, 5, header):
 
         # move to gpu
         inp = inp.cuda(non_blocking=True)
@@ -78,7 +87,7 @@ def validate_multihead_network(model,
                 
             # save output
             if tensor_dir is not None:
-                save_output_batch(output, names, tensor_dir)
+                save_output_batch(output, batch_names, tensor_dir)
             
             is_adv = posthoc(output).argmax(axis=1)
             
@@ -105,7 +114,7 @@ def validate_multihead_network(model,
         if num_labels >= 5:
             metric_logger.meters['acc5'].update(acc5.item(), n=batch_size)    
         if path_predictions is not None:
-            names.extend(names)
+            names.extend(batch_names)
             true_labels.extend(target.tolist())
             predicted_labels.extend(torch.argmax(output,-1).tolist())
             if adversarial_attack is not None:
