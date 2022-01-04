@@ -29,8 +29,8 @@ random.seed(SEED)
 torch.manual_seed(SEED)
 np.random.seed(SEED)
 
-DATA_PATH = Path('/','cluster', 'scratch', 'thobauma', 'dl_data')
-MAX_PATH = Path('/','cluster', 'scratch', 'mmathys', 'dl_data')
+DATA_PATH = Path('..', 'data_dir')
+MAX_PATH = DATA_PATH
 
 LOG_BASE_PATH = Path(MAX_PATH, 'logs')
 
