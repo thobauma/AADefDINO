@@ -80,7 +80,7 @@ def validate_multihead_network(model,
             if tensor_dir is not None:
                 save_output_batch(output, names, tensor_dir)
             
-            is_adv = torch.round(posthoc(output))
+            is_adv = posthoc(output).argmax(axis=1)
             
             use_cuda = torch.cuda.is_available()
             final_output = torch.empty(output.shape[0], clean_classifier.linear.out_features).to("cuda" if use_cuda else "cpu")
