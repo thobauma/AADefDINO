@@ -236,7 +236,8 @@ def validate_network(model,
                      n=4, 
                      avgpool_patchtokens=False, 
                      path_predictions=None, 
-                     show_image=False):
+                     show_image=False,
+                     log_interval=None):
     """ Validates a classifier ontop of an optional model with an optional 
         adversarial attack. 
         
@@ -277,13 +278,14 @@ def validate_network(model,
         tensor_dir.mkdir(parents=True, exist_ok=True)
         if adversarial_attack is not None:
             adv_tensor_dir = Path(tensor_dir,'adv').mkdir(parents=True, exist_ok=True)
-            
-    if len(validation_loader)<20:
-        log_interval = 1
-    elif len(validation_loader)<100:
-        log_interval = 5
-    else:
-        log_interval = 20
+    
+    if log_interval is None:
+        if len(validation_loader)<20:
+            log_interval = 1
+        elif len(validation_loader)<100:
+            log_interval = 5
+        else:
+            log_interval = 20
     for inp, target, batch_names in metric_logger.log_every(validation_loader, log_interval, header):
 
         # move to gpu

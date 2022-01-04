@@ -55,7 +55,7 @@ DATA_PATH = Path('/','cluster', 'scratch', 'thobauma', 'dl_data')
 MAX_PATH = Path('/','cluster', 'scratch', 'mmathys', 'dl_data')
 
 # Image Net
-ORI_PATH = Path(DATA_PATH, 'ori_data')
+ORI_PATH = Path(DATA_PATH, 'ori')
 CLASS_SUBSET_PATH = Path(ORI_PATH, 'class_subset.npy')
 
 TRAIN_PATH = Path(ORI_PATH, 'train')
@@ -106,7 +106,9 @@ if __name__ == '__main__':
     
     for atk, name in attacks:
         
+
         STORE_PATH = Path(MAX_PATH, 'adversarial_data_tensors', name)
+
         train_dataset = AdvTrainingImageDataset(TRAIN_IMAGES_PATH, 
                                                 TRAIN_LABEL_PATH, 
                                                 ORIGINAL_TRANSFORM, 
@@ -123,7 +125,7 @@ if __name__ == '__main__':
         print(atk)
         print('train set')
 
-        STORE_LABEL_PATH = Path(STORE_PATH, 'train', 'labels.txt')
+        STORE_LABEL_PATH = Path(STORE_PATH, 'train', 'labels.csv')
         STORE_LABEL_PATH.parent.mkdir(parents=True, exist_ok=True)
         STORE_IMAGES_PATH = Path(STORE_PATH, 'train', 'images')
         STORE_IMAGES_PATH.mkdir(parents=True, exist_ok=True)
@@ -134,8 +136,10 @@ if __name__ == '__main__':
         correct = 0
         start = time.time()
         
+
         print(f'''\nsaving predictions to: {STORE_LABEL_PATH}''')
         print(f'''saving output tensors to: {STORE_IMAGES_PATH}''')
+
         for images, labels, img_names in tqdm(train_loader):
             images.cuda(non_blocking=True)
             labels = labels.cuda(non_blocking=True)
@@ -149,9 +153,9 @@ if __name__ == '__main__':
 
             correct += (pre == labels).sum()
 
-            for i in range(adv_images.shape[0]):
-                torch.save(adv_images[i,:,:,:], Path(STORE_IMAGES_PATH, Path(img_names[i].split('.')[0])))
 
+            for adv_img, img_name in zip(adv_images, img_names):
+                torch.save(adv_img, Path(STORE_IMAGES_PATH, Path(img_name.split('.')[0])))
             
             true_labels.extend(labels.detach().cpu().tolist())
             adv_labels.extend(pre.detach().cpu().tolist())
@@ -161,7 +165,9 @@ if __name__ == '__main__':
         del adv_images
         del labels
         torch.cuda.empty_cache()
-        print('Total elapsed time (sec): %.2f' % (time.time() - start))
+
+        print('\nTotal elapsed time (sec): %.2f' % (time.time() - start))
+
         print('Accuracy against attack: %.2f %%' % (100 * float(correct) / len(train_loader.dataset)))
         print(f'''\n''')
         
@@ -185,7 +191,7 @@ if __name__ == '__main__':
                                 shuffle=False)
         
         
-        STORE_LABEL_PATH = Path(STORE_PATH, 'validation', 'labels.txt')
+        STORE_LABEL_PATH = Path(STORE_PATH, 'validation', 'labels.csv')
         STORE_LABEL_PATH.parent.mkdir(parents=True, exist_ok=True)
         STORE_IMAGES_PATH = Path(STORE_PATH, 'validation', 'images')
         STORE_IMAGES_PATH.mkdir(parents=True, exist_ok=True)
@@ -195,8 +201,10 @@ if __name__ == '__main__':
         true_labels = []
         adv_labels = []
         names = []
-        print(f'''\nsaving predictions to: {STORE_LABEL_PATH}''')
-        print(f'''saving output tensors to: {STORE_IMAGES_PATH}''')
+
+        print(f'''saving predictions to: {STORE_LABEL_PATH}''')
+        print(f'''saving output tensors to: {STORE_IMAGES_PATH}\n''')
+
         for images, labels, img_names in tqdm(val_loader):
             images.cuda(non_blocking=True)
             labels = labels.cuda(non_blocking=True)
@@ -210,8 +218,9 @@ if __name__ == '__main__':
 
             correct += (pre == labels).sum()
 
-            for i in range(adv_images.shape[0]):
-                torch.save(adv_images[i,:,:,:], Path(STORE_IMAGES_PATH, Path(img_names[i].split('.')[0])))
+            
+            for adv_img, img_name in zip(adv_images, img_names):
+                torch.save(adv_img, Path(STORE_IMAGES_PATH, Path(img_name.split('.')[0])))
                 
             true_labels.extend(labels.detach().cpu().tolist())
             adv_labels.extend(pre.detach().cpu().tolist())
@@ -230,4 +239,3 @@ if __name__ == '__main__':
         df['file'] = df['file'].str.split('.').str[0]
         df.to_csv(STORE_LABEL_PATH, sep=",", index=None)
         print(f'''\n''')
-
