@@ -93,24 +93,20 @@ linear_classifier.load_state_dict(torch.load("/cluster/scratch/mmathys/dl_data/a
 linear_classifier.cuda()
 
 
-
-
 model_wrap = ViTWrapper(model, linear_classifier, device=DEVICE, n_last_blocks=4, avgpool_patchtokens=False)
 model_wrap = model_wrap.to(DEVICE)
 
 attacks = [
-    #(PGD(model_wrap, eps=0.03, alpha=0.015, steps=20), 'pgd_03'),
+    (PGD(model_wrap, eps=0.03, alpha=0.015, steps=20), 'pgd_03'),
     (CW(model_wrap, c=50, lr=0.0031, steps=30), 'cw'),
-    #(FGSM(model_wrap, eps=0.06), 'fgsm_06')
+    (FGSM(model_wrap, eps=0.06), 'fgsm_06')
 ]
 
 if __name__ == '__main__':
     
-    
-
     for atk, name in attacks:
         
-        STORE_PATH = Path(MAX_PATH, 'adversarial_data', name)
+        STORE_PATH = Path(MAX_PATH, 'adversarial_data_tensors', name)
         train_dataset = AdvTrainingImageDataset(TRAIN_IMAGES_PATH, 
                                                 TRAIN_LABEL_PATH, 
                                                 ORIGINAL_TRANSFORM, 
@@ -131,11 +127,15 @@ if __name__ == '__main__':
         STORE_LABEL_PATH.parent.mkdir(parents=True, exist_ok=True)
         STORE_IMAGES_PATH = Path(STORE_PATH, 'train', 'images')
         STORE_IMAGES_PATH.mkdir(parents=True, exist_ok=True)
-        adv_labels = {}
+        true_labels = []
+        adv_labels = []
+        names = []
 
         correct = 0
         start = time.time()
-
+        
+        print(f'''\nsaving predictions to: {STORE_LABEL_PATH}''')
+        print(f'''saving output tensors to: {STORE_IMAGES_PATH}''')
         for images, labels, img_names in tqdm(train_loader):
             images.cuda(non_blocking=True)
             labels = labels.cuda(non_blocking=True)
@@ -150,20 +150,25 @@ if __name__ == '__main__':
             correct += (pre == labels).sum()
 
             for i in range(adv_images.shape[0]):
-                save_image(adv_images[i,:,:,:], Path(STORE_IMAGES_PATH, Path(img_names[i])))
-                adv_labels[img_names[i]] = labels.cpu().numpy()[i]
+                torch.save(adv_images[i,:,:,:], Path(STORE_IMAGES_PATH, Path(img_names[i].split('.')[0])))
+
             
-            del images
-            del adv_images
-            del labels
-            torch.cuda.empty_cache()
-        
+            true_labels.extend(labels.detach().cpu().tolist())
+            adv_labels.extend(pre.detach().cpu().tolist())
+            names.extend(img_names)
+            
+        del images
+        del adv_images
+        del labels
+        torch.cuda.empty_cache()
         print('Total elapsed time (sec): %.2f' % (time.time() - start))
         print('Accuracy against attack: %.2f %%' % (100 * float(correct) / len(train_loader.dataset)))
-
-        df = pd.DataFrame.from_dict(adv_labels, orient='index')
-        df.to_csv(STORE_LABEL_PATH, sep=" ", header=False)
-
+        print(f'''\n''')
+        
+        data_dict = {'file': names, 'true_labels':true_labels, name+'_pred':adv_labels}
+        df = pd.DataFrame(data_dict)
+        df['file'] = df['file'].str.split('.').str[0]
+        df.to_csv(STORE_LABEL_PATH, sep=",", index=None)
         
         print('Validation set')
         
@@ -187,8 +192,11 @@ if __name__ == '__main__':
         
         correct = 0
         start = time.time()
-        adv_labels = {}
-        
+        true_labels = []
+        adv_labels = []
+        names = []
+        print(f'''\nsaving predictions to: {STORE_LABEL_PATH}''')
+        print(f'''saving output tensors to: {STORE_IMAGES_PATH}''')
         for images, labels, img_names in tqdm(val_loader):
             images.cuda(non_blocking=True)
             labels = labels.cuda(non_blocking=True)
@@ -203,17 +211,23 @@ if __name__ == '__main__':
             correct += (pre == labels).sum()
 
             for i in range(adv_images.shape[0]):
-                save_image(adv_images[i,:,:,:], Path(STORE_IMAGES_PATH, Path(img_names[i])))
-                adv_labels[img_names[i]] = labels.cpu().numpy()[i]
+                torch.save(adv_images[i,:,:,:], Path(STORE_IMAGES_PATH, Path(img_names[i].split('.')[0])))
+                
+            true_labels.extend(labels.detach().cpu().tolist())
+            adv_labels.extend(pre.detach().cpu().tolist())
+            names.extend(img_names)
 
-            del images
-            del adv_images
-            del labels
-            torch.cuda.empty_cache()
-            
+        del images
+        del adv_images
+        del labels
+        torch.cuda.empty_cache()
+        
         print('Total elapsed time (sec): %.2f' % (time.time() - start))
         print('Accuracy against attack: %.2f %%' % (100 * float(correct) / len(val_loader.dataset)))
 
-        df = pd.DataFrame.from_dict(adv_labels, orient='index')
-        df.to_csv(STORE_LABEL_PATH, sep=" ", header=False)
+        data_dict = {'file': names, 'true_labels':true_labels, name+'_pred':adv_labels}
+        df = pd.DataFrame(data_dict)
+        df['file'] = df['file'].str.split('.').str[0]
+        df.to_csv(STORE_LABEL_PATH, sep=",", index=None)
+        print(f'''\n''')
 
