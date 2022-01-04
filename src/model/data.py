@@ -163,7 +163,7 @@ class EnsembleDataset(torch.utils.data.Dataset):
         filename = filename.split('.')[0]
         payload = torch.load(Path(self.img_folder, filename)).cpu()
         target=self.data['true_labels'].iloc[index]
-        return payload, label, filename
+        return payload, target, filename
 
     
 class AdvTrainingImageDataset(Dataset):
