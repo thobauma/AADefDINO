@@ -16,7 +16,7 @@ This step prepares the dataset and generates the adversarial attacks (PGD, CW an
 
 This step performs the adversarial training on the DINO classification head.
 
-- `adversarialTraining.ipynb`: performs adversarial training.
+- `/scripts/adversarialTraining.py`: performs adversarial training.
 
 ### Posthoc classifier
 
