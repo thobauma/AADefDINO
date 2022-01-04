@@ -40,16 +40,16 @@ DN_LABEL_PATH = Path(DN_PATH, 'val_damagenet.txt')
 DN_IMAGES_PATH = Path(DN_PATH, 'images')
 
 # Image Net
-ORI_PATH = Path(DATA_PATH, 'ori_data')
+ORI_PATH = Path(DATA_PATH, 'ori')
 CLASS_SUBSET_PATH = Path(ORI_PATH, 'class_subset.npy')
 
 VAL_PATH = Path(ORI_PATH, 'validation')
 VAL_IMAGES_PATH = Path(VAL_PATH,'images')
-VAL_LABEL_PATH = Path(VAL_PATH, 'correct_labels.txt')
+VAL_LABEL_PATH = Path(VAL_PATH, 'labels.csv')
 
 TRAIN_PATH = Path(ORI_PATH, 'train')
 TRAIN_IMAGES_PATH = Path(TRAIN_PATH,'images')
-TRAIN_LABEL_PATH = Path(TRAIN_PATH, 'correct_labels.txt')
+TRAIN_LABEL_PATH = Path(TRAIN_PATH, 'labels.csv')
 
 # If CLASS_SUBSET is specified, INDEX_SUBSET will be ignored. Set CLASS_SUBSET=None if you want to use indexes.
 # INDEX_SUBSET = get_random_indexes(number_of_images = 50000, n_samples=1000)

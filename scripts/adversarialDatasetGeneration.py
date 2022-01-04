@@ -60,11 +60,11 @@ CLASS_SUBSET_PATH = Path(ORI_PATH, 'class_subset.npy')
 
 TRAIN_PATH = Path(ORI_PATH, 'train')
 TRAIN_IMAGES_PATH = Path(TRAIN_PATH,'images')
-TRAIN_LABEL_PATH = Path(TRAIN_PATH, 'correct_labels.txt')
+TRAIN_LABEL_PATH = Path(TRAIN_PATH, 'labels.csv')
 
 VAL_PATH = Path(ORI_PATH, 'validation')
 VAL_IMAGES_PATH = Path(VAL_PATH,'images')
-VAL_LABEL_PATH = Path(VAL_PATH, 'correct_labels.txt')
+VAL_LABEL_PATH = Path(VAL_PATH, 'labels.csv')
 
 
 INDEX_SUBSET = None
