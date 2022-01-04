@@ -125,7 +125,7 @@ if __name__ == '__main__':
 
         STORE_TRUE_LABEL_PATH = Path(STORE_PATH, 'train', 'labels.txt')
         STORE_ADV_LABEL_PATH = Path(STORE_PATH, 'train', 'adv_labels.txt')
-        STORE_LABEL_PATH.parent.mkdir(parents=True, exist_ok=True)
+        STORE_TRUE_LABEL_PATH.parent.mkdir(parents=True, exist_ok=True)
         STORE_IMAGES_PATH = Path(STORE_PATH, 'train', 'images')
         STORE_IMAGES_PATH.mkdir(parents=True, exist_ok=True)
         true_labels = {}
@@ -156,6 +156,7 @@ if __name__ == '__main__':
             del adv_images
             del labels
             torch.cuda.empty_cache()
+            break
         
         print('Total elapsed time (sec): %.2f' % (time.time() - start))
         print('Accuracy against attack: %.2f %%' % (100 * float(correct) / len(train_loader.dataset)))
@@ -183,7 +184,7 @@ if __name__ == '__main__':
         
         STORE_TRUE_LABEL_PATH = Path(STORE_PATH, 'validation', 'labels.txt')
         STORE_ADV_LABEL_PATH = Path(STORE_PATH, 'validation', 'adv_labels.txt')
-        STORE_LABEL_PATH.parent.mkdir(parents=True, exist_ok=True)
+        STORE_TRUE_LABEL_PATH.parent.mkdir(parents=True, exist_ok=True)
         STORE_IMAGES_PATH = Path(STORE_PATH, 'validation', 'images')
         STORE_IMAGES_PATH.mkdir(parents=True, exist_ok=True)
         
@@ -214,6 +215,7 @@ if __name__ == '__main__':
             del adv_images
             del labels
             torch.cuda.empty_cache()
+            break
             
         print('Total elapsed time (sec): %.2f' % (time.time() - start))
         print('Accuracy against attack: %.2f %%' % (100 * float(correct) / len(val_loader.dataset)))
