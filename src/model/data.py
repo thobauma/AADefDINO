@@ -160,7 +160,7 @@ class EnsembleDataset(torch.utils.data.Dataset):
     
     def __getitem__(self, index):            
         filename = self.index_df['file'].iloc[index]
-        filename = filename.split('.')[0]+'.pt'
+        filename = filename.split('.')[0]
         payload = torch.load(Path(self.img_folder, filename)).cpu()
         target=self.data_subset['true_labels'].iloc[index]
         return payload, label, filename
