@@ -1,43 +1,47 @@
-# Adversarial Defense in Self-Supervised Vision Transformers
+# Defense in Self-Supervised Vision Transformers
 
-## Material
+Contents:
+
+```
+.
+├── dino
+├── notebooks
+├── scripts
+├── setup
+└── src
+```
+
+## Pipeline
 
 ### Adversarial Dataset Generation
 
 This step prepares the dataset and generates the adversarial attacks (PGD, CW and FGSM) which are saved as tensors. 
 
-- Download ImageNet (see `setup/urls.txt`)
-- `get_train_labels.ipynb`: map the labels
-- `createDataSubset.ipynb`: define class subset
-- contained in `emsemble.ipynb`: train classifier of head (25 classes)
-- `scripts/adversarialDatasetGeneration.py`: generate all attacks (PGD, CW, FGSM)
+- Download ImageNet train and validation set: see `setup/urls.txt`.
+- `2012_2017_labels_map/`: notebook and mapping of the ImageNet classes from 2012 to 2017, with a notebook to generate those mappings contained in this folder.
+- `notebooks/createDataSubset.ipynb`: we used a subset of 25 ImageNet classes. This notebooks creates the index for the subset.
+- `notebooks/emsemble.ipynb` (part): trains and saves the custom classifier head for our ImageNet subset. This is required since the classification head from the original DINO model is trained on the full ImageNet dataset which contains 1000 classes.
+- `scripts/adversarialDatasetGeneration.py`: generates and saves adversarial dataset for PGD, CW and FGSM.
+- `AdversarialBenchmark.ipynb`: calculates the accuracy of DINO for the generated adversarial dataset.
 
 ### Adversarial Training
 
 This step performs the adversarial training on the DINO classification head.
 
-- `/scripts/adversarialTraining.py`: performs adversarial training.
+- `scripts/adversarialTraining.py`: performs adversarial on the classification head using the generated adversarial data.
+- `notebooks/AdvTrainingMetrics.ipynb`: generates figure 2 (top-1 accuracy for 10 randomly selected classes after performing PGD adversarial trainingfor different values of ε)
 
-### Posthoc classifier
+### Post-hoc classifier
 
 This step generates and stores the latent space of DINO. This latent space is used as input to the post-hoc classifier.
 
-- `p_classifier_forward.ipynb`: Store the latent space for the posthoc classifier with a single forward pass. DISCUSS: for "n last 4 layers" latent space only and not for attention. ok like this?
-- `p_classifier_train.ipynb`: trains the posthoc binary classifier.
-- `p_classifier_matrix.ipynb`: computes the posthoc accuracy matrix
-
-This notebook was used to generate the visualizations of the latent space:
-
-- `Clustering.ipynb`: performs the clustering of the latent space for post-hoc classifier as shown in the paper
+- `notebooks/p_classifier_forward.ipynb`: stores the latent space for the post-hoc classifier which is computed with a forward pass.
+- `notebooks/p_classifier_train.ipynb`: trains the post-hoc binary linear classifier.
+- `notebooks/p_classifier_matrix.ipynb`: computes the post-hoc accuracy matrix (table 4 in the report).
+- `notebooks/Clustering.ipynb`: performs the clustering of the latent space for post-hoc classifier as shown in the paper
 
 ### Ensemble
 
 The ensemble model uses the posthoc classifier to defend against adversarial attacks.
 
-- `emsemble.ipynb`: performs the ensemble defense
-
-### Various
-
-This notebook was used to calculate the accuracy of the (unmodified) DINO model and the supervised ViT against the considered adversarial attacks (PGD, CW, FGSM).
-
-- `AdversarialBenchmark.ipynb`: launch attacks on DINO and generate accuracies for different attack parameters
+- `notebooks/emsemble.ipynb`: performs the ensemble defense
