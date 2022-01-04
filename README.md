@@ -1,4 +1,4 @@
-# Attention for Adversarial Defense in Self-SupervisedVision Transformers
+# Attention for Adversarial Defense in Self-Supervised Vision Transformers
 
 ## Material
 
