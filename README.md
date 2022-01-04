@@ -12,7 +12,7 @@
 
 ### Posthoc
 
-- `p_classifier_forward.ipynb`: Store the latent space for the posthoc classifier with a single forward pass, for either latent spaces.
+- `p_classifier_forward.ipynb`: Store the latent space for the posthoc classifier with a single forward pass. DISCUSS: for "n last 4 layers" latent space only and not for attention. ok like this?
 - `p_classifier_train.ipynb`: trains the posthoc binary classifier.
 - `p_classifier_matrix.ipynb`: computes the posthoc accuracy matrix
 
