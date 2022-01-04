@@ -93,8 +93,6 @@ linear_classifier.load_state_dict(torch.load("/cluster/scratch/mmathys/dl_data/a
 linear_classifier.cuda()
 
 
-
-
 model_wrap = ViTWrapper(model, linear_classifier, device=DEVICE, n_last_blocks=4, avgpool_patchtokens=False)
 model_wrap = model_wrap.to(DEVICE)
 
@@ -106,11 +104,9 @@ attacks = [
 
 if __name__ == '__main__':
     
-    
-
     for atk, name in attacks:
         
-        STORE_PATH = Path(MAX_PATH, 'adversarial_data', name)
+        STORE_PATH = Path(MAX_PATH, 'adversarial_data_tensors', name)
         train_dataset = AdvTrainingImageDataset(TRAIN_IMAGES_PATH, 
                                                 TRAIN_LABEL_PATH, 
                                                 ORIGINAL_TRANSFORM, 
@@ -127,10 +123,12 @@ if __name__ == '__main__':
         print(atk)
         print('train set')
 
-        STORE_LABEL_PATH = Path(STORE_PATH, 'train', 'labels.txt')
+        STORE_TRUE_LABEL_PATH = Path(STORE_PATH, 'train', 'labels.txt')
+        STORE_ADV_LABEL_PATH = Path(STORE_PATH, 'train', 'adv_labels.txt')
         STORE_LABEL_PATH.parent.mkdir(parents=True, exist_ok=True)
         STORE_IMAGES_PATH = Path(STORE_PATH, 'train', 'images')
         STORE_IMAGES_PATH.mkdir(parents=True, exist_ok=True)
+        true_labels = {}
         adv_labels = {}
 
         correct = 0
@@ -150,9 +148,10 @@ if __name__ == '__main__':
             correct += (pre == labels).sum()
 
             for i in range(adv_images.shape[0]):
-                save_image(adv_images[i,:,:,:], Path(STORE_IMAGES_PATH, Path(img_names[i])))
-                adv_labels[img_names[i]] = labels.cpu().numpy()[i]
-            
+                torch.save(adv_images[i,:,:,:], Path(STORE_IMAGES_PATH, Path(img_names[i])))
+                true_labels[img_names[i]] = labels.cpu().numpy()[i]
+                adv_labels[img_names[i]] = pre.cpu().numpy()[i]
+                
             del images
             del adv_images
             del labels
@@ -162,7 +161,9 @@ if __name__ == '__main__':
         print('Accuracy against attack: %.2f %%' % (100 * float(correct) / len(train_loader.dataset)))
 
         df = pd.DataFrame.from_dict(adv_labels, orient='index')
-        df.to_csv(STORE_LABEL_PATH, sep=" ", header=False)
+        df_true = pd.DataFrame.from_dict(true_labels, orient='index')
+        df.to_csv(STORE_ADV_LABEL_PATH, sep=" ", header=False)
+        df_true.to_csv(STORE_TRUE_LABEL_PATH, sep=" ", header=False)
 
         
         print('Validation set')
@@ -180,13 +181,15 @@ if __name__ == '__main__':
                                 shuffle=False)
         
         
-        STORE_LABEL_PATH = Path(STORE_PATH, 'validation', 'labels.txt')
+        STORE_TRUE_LABEL_PATH = Path(STORE_PATH, 'validation', 'labels.txt')
+        STORE_ADV_LABEL_PATH = Path(STORE_PATH, 'validation', 'adv_labels.txt')
         STORE_LABEL_PATH.parent.mkdir(parents=True, exist_ok=True)
         STORE_IMAGES_PATH = Path(STORE_PATH, 'validation', 'images')
         STORE_IMAGES_PATH.mkdir(parents=True, exist_ok=True)
         
         correct = 0
         start = time.time()
+        true_labels = {}
         adv_labels = {}
         
         for images, labels, img_names in tqdm(val_loader):
@@ -203,8 +206,9 @@ if __name__ == '__main__':
             correct += (pre == labels).sum()
 
             for i in range(adv_images.shape[0]):
-                save_image(adv_images[i,:,:,:], Path(STORE_IMAGES_PATH, Path(img_names[i])))
-                adv_labels[img_names[i]] = labels.cpu().numpy()[i]
+                torch.save(adv_images[i,:,:,:], Path(STORE_IMAGES_PATH, Path(img_names[i])))
+                true_labels[img_names[i]] = labels.cpu().numpy()[i]
+                adv_labels[img_names[i]] = pre.cpu().numpy()[i]
 
             del images
             del adv_images
@@ -215,5 +219,6 @@ if __name__ == '__main__':
         print('Accuracy against attack: %.2f %%' % (100 * float(correct) / len(val_loader.dataset)))
 
         df = pd.DataFrame.from_dict(adv_labels, orient='index')
-        df.to_csv(STORE_LABEL_PATH, sep=" ", header=False)
-
+        df_true = pd.DataFrame.from_dict(true_labels, orient='index')
+        df.to_csv(STORE_ADV_LABEL_PATH, sep=" ", header=False)
+        df_true.to_csv(STORE_TRUE_LABEL_PATH, sep=" ", header=False)
