@@ -21,7 +21,7 @@ def imshow(img):
     
     
     
-def create_paths(data_name: str='ori_data',
+def create_paths(data_name: str='ori',
                  datasets_paths: defaultdict=None,  
                  initial_base_path: Union[str, Path]='',
                  posthoc_base_path: Union[str, Path]='', 
