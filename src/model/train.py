@@ -39,7 +39,7 @@ def train(model,
         
         :param model: base model (frozen)
         :param classifier: classifier to train
-        :param train_loader: dataloader of the train dataset
+        :param train_loader: loader of the train set
         :param validation_loader: dataloader of the validation dataset
         :param log_dir: path to the log directory.
         :param tensor_dir: if set saves the output of the model in the dir
