@@ -1,23 +1,23 @@
 # ToDo
--[ ] Report
-    -[ ] fix the structure of the report (nasib, javi) (19.04.2022)
-    -[ ] some more future work (nasib) (19.04.2022)
-    -[ ] formatting for ICML (max) (19.04.2022)
--[ ] Codebase and experiments
-    -[ ] Define additional results that are needed (Javi) (19.04.2022)
-    -[ ] {BACKLOG} compare the post hoc on dino with a model directly trained on the original and adversarial images (not sure? postpone or clarify)
-        -[ ] maybe get resnet feature extractor, train classifier (post-hoc and two classification heads)
-    -[ ] (if above completed) Generate more results (all)
-        -[ ] different pgd parameters (more in depth)
-    -[ ] change jupyterfiles to proper python (Thomas, Max) (19.04.2022)
-    -[ ] {BACKLOG} DINO pretrained on imagenet (might be more robust to that dataset) --> finetune on seperate dataset and see how well it performs against adversarial attacks (does it generalise)
--[ ] General
-    -[ ] Ask Luis for feedback&Ideas (Javi) (19.04.2022)
-    -[ ] Go through the paper, write down ideas and things to be improved, share in group (All) (19.04.2022)
-    -[ ] Look at a few papers that were accepted as NIPS workshops (All) (19.04.2022)
-    -[ ] Two approaches
-        -[ ] Try to reformulate so that we are exploring how these attacks are affecting DINO and draw conclusion
-        -[ ] Try to show that we can actually build a defence without retraining entire transformer with adversarial training (not sure if feasible)
+- [ ] Report
+    - [ ] fix the structure of the report (nasib, javi) (19.04.2022)
+    - [ ] some more future work (nasib) (19.04.2022)
+    - [ ] formatting for ICML (max) (19.04.2022)
+- [ ] Codebase and experiments
+    - [ ] Define additional results that are needed (Javi) (19.04.2022)
+    - [ ] {BACKLOG} compare the post hoc on dino with a model directly trained on the original and adversarial images (not sure? postpone or clarify)
+        - [ ] maybe get resnet feature extractor, train classifier (post-hoc and two classification heads)
+    - [ ] (if above completed) Generate more results (all)
+        - [ ] different pgd parameters (more in depth)
+    - [ ] change jupyterfiles to proper python (Thomas, Max) (19.04.2022)
+    - [ ] {BACKLOG} DINO pretrained on imagenet (might be more robust to that dataset) --> finetune on seperate dataset and see how well it performs against adversarial attacks (does it generalise)
+- [ ] General
+    - [ ] Ask Luis for feedback&Ideas (Javi) (19.04.2022)
+    - [ ] Go through the paper, write down ideas and things to be improved, share in group (All) (19.04.2022)
+    - [ ] Look at a few papers that were accepted as NIPS workshops (All) (19.04.2022)
+    - [ ] Two approaches
+        - [ ] Try to reformulate so that we are exploring how these attacks are affecting DINO and draw conclusion
+        - [ ] Try to show that we can actually build a defence without retraining entire transformer with adversarial training (not sure if feasible)
     
 
 # Feedback on project condensed
