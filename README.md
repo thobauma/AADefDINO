@@ -1,3 +1,37 @@
+# ToDo
+-[ ] Report
+    -[ ] fix the structure of the report (nasib, javi) (19.04.2022)
+    -[ ] some more future work (nasib) (19.04.2022)
+    -[ ] formatting for ICML (max) (19.04.2022)
+-[ ] Codebase and experiments
+    -[ ] Define additional results that are needed (Javi) (19.04.2022)
+    -[ ] {BACKLOG} compare the post hoc on dino with a model directly trained on the original and adversarial images (not sure? postpone or clarify)
+        -[ ] maybe get resnet feature extractor, train classifier (post-hoc and two classification heads)
+    -[ ] (if above completed) Generate more results (all)
+        -[ ] different pgd parameters (more in depth)
+    -[ ] change jupyterfiles to proper python (Thomas, Max) (19.04.2022)
+    -[ ] {BACKLOG} DINO pretrained on imagenet (might be more robust to that dataset) --> finetune on seperate dataset and see how well it performs against adversarial attacks (does it generalise)
+-[ ] General
+    -[ ] Ask Luis for feedback&Ideas (Javi) (19.04.2022)
+    -[ ] Go through the paper, write down ideas and things to be improved, share in group (All) (19.04.2022)
+    -[ ] Look at a few papers that were accepted as NIPS workshops (All) (19.04.2022)
+    -[ ] Two approaches
+        -[ ] Try to reformulate so that we are exploring how these attacks are affecting DINO and draw conclusion
+        -[ ] Try to show that we can actually build a defence without retraining entire transformer with adversarial training (not sure if feasible)
+    
+
+# Feedback on project condensed
+- Structure-wise I find it a bit odd that the Limitations section comes last in the paper and some more discussion of possible future directions would have been nice. --> maybe ignore the limitations comment.
+- it would be better if the authors compare their post-hoc detector with a model directly trained on original and adversarial images. It is unclear why the authors choose the detector to be post-hoc, as the authors only mentions its downside in Sec 2.2.1. --> highlight post-hoc benefits
+- The fact that they only focus on fine-tuning/defending in the last layer of a transformer is very interesting. Even though the authors mention that this is a limitation of their results, I think this could have been argued for in a more positive manner: it seems like a very interesting approach to me, since for large pre-trained models it may not be feasible to defend on all layers, even when much more compute is available. --> maybe we did not justify our approach, which we took for granted or did not stress enough - clarify why post-hoc as defence rather full scale defence
+
+
+## Deadline NIPS:   TBD for workshops (after paper deadline), May 16th for abstract, May 19th for paper
+
+## Deadline ICML AdvML Workshop:  May 23rd for workshop submission ==> attempt this
+https://advml-frontier.github.io/
+(https://openreview.net/)
+
 # Defense in Self-Supervised Vision Transformers
 
 Contents:
