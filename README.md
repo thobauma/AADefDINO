@@ -12,7 +12,7 @@
     - [ ] change jupyterfiles to proper python (Thomas, Max) (19.04.2022)
     - [ ] {BACKLOG} DINO pretrained on imagenet (might be more robust to that dataset) --> finetune on seperate dataset and see how well it performs against adversarial attacks (does it generalise)
 - [ ] General
-    - [ ] Ask Luis for feedback&Ideas (Javi) (19.04.2022)
+    - [x] Ask Luis for feedback&Ideas (Javi) (19.04.2022)
     - [ ] Go through the paper, write down ideas and things to be improved, share in group (All) (19.04.2022)
     - [ ] Look at a few papers that were accepted as NIPS workshops (All) (19.04.2022)
     - [ ] Two approaches
