@@ -32,6 +32,7 @@
 - [ ] Prepare diagram for the ensemble defense for better understanding
 - [ ] In 4.3 we say "Instead of making use of a voting mechanism", why don't we do it? Why our approach is better? Shall we try and compare?
 - [ ] In 4.3, why does FGSM yield the best result if it is the most simple attack? Maybe because samples get further from the distribution?
+- [ ] Include the perturbation of attention maps to improve the analysis we do.
 
 
 # Feedback on project condensed
