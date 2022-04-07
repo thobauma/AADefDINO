@@ -19,6 +19,20 @@
         - [ ] Try to reformulate so that we are exploring how these attacks are affecting DINO and draw conclusion
         - [ ] Try to show that we can actually build a defence without retraining entire transformer with adversarial training (not sure if feasible)
     
+# Paper comments and improvements TBD
+
+- [ ] Table 3: include row for default classifier with no Adversarial Training.
+- [ ] Check if it is possible to also fine-tune last layer
+- [ ] Why do we choose those values of epsilon?
+- [ ] Figure 2: compare with no Adversarial Training
+- [ ] Figure 1: Improve legends
+- [ ] Table 1: include predicted class
+- [ ] Figure 3: include name of the predicted class
+- [ ] How do we choose the `c` for C&W and how it compares with epsilon in PGD.
+- [ ] Prepare diagram for the ensemble defense for better understanding
+- [ ] In 4.3 we say "Instead of making use of a voting mechanism", why don't we do it? Why our approach is better? Shall we try and compare?
+- [ ] In 4.3, why does FGSM yield the best result if it is the most simple attack? Maybe because samples get further from the distribution?
+
 
 # Feedback on project condensed
 - Structure-wise I find it a bit odd that the Limitations section comes last in the paper and some more discussion of possible future directions would have been nice. --> maybe ignore the limitations comment.
