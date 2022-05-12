@@ -43,8 +43,6 @@ np.random.seed(SEED)
 
 
 
-
-
 INDEX_SUBSET = get_random_indexes(n_samples=3000) # Randomly sample data
 
 
