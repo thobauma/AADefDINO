@@ -168,14 +168,12 @@ class EnsembleDataset(torch.utils.data.Dataset):
     
 class AdvTrainingImageDataset(Dataset):
     def __init__(self, 
-                   img_folder: Union[str,Path], 
-                   labels_file_name: Union[str,Path], 
-                   transform: callable, 
-                   class_subset: Union[List[int],None] = None, 
-                   index_subset: Union[List[int],None] = None, 
+                   img_folder: str, 
+                   labels_file_name: str, 
+                   transform: callable,
+                   index_subset: List[int] = None, 
                    label_encoder=None):
         super().__init__()
-        # MAP CLASSES TO [0, NUM_CLASSES]
         self.transform=transform
         self.img_folder=img_folder
         self.data = self.create_df(labels_file_name)
@@ -184,29 +182,15 @@ class AdvTrainingImageDataset(Dataset):
         self.prepare_data(label_encoder)
 
     def prepare_data(self, label_encoder):
-        if self.class_subset is None:
-            if self.index_subset is not None:
-                data_subset = self.data.iloc[index_subset]
-            else:
-                data_subset = self.data
+        if self.index_subset is not None:
+            data_subset = self.data.iloc[index_subset]
         else:
-            if label_encoder is None:
-                self.le = preprocessing.LabelEncoder()
-                self.le.fit([i for i in class_subset])
-            else:
-                self.le = label_encoder
-
-            data_subset = self.data[self.data['label'].isin(self.class_subset)] 
-            trans_labels = self.le.transform(data_subset['label'])
-            data_subset = data_subset.rename(columns={'label': 'original_label'})
-            data_subset['label'] = trans_labels
-            if self.index_subset is not None:
-                data_subset=data_subset.iloc[self.index_subset]
+            data_subset = self.data
         self.data = data_subset
 
 
     def create_df(self, labels_file_name: str):
-        df = pd.read_csv(labels_file_name, sep=" ", names=['file', 'label'])
+        df = pd.read_csv(labels_file_name, sep=",", index_col=0)
         return df
     
     def __len__(self):
@@ -219,5 +203,6 @@ class AdvTrainingImageDataset(Dataset):
         filename= filename.split('.')[0]
         img=self.transform(img)
         target=self.data['label'].iloc[index]
+        red_target=self.data['reduced_label'].iloc[index]
 
-        return img, target, filename
+        return img, target, red_target, filename
