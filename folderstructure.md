@@ -1,6 +1,6 @@
 
 ```
-├── data_dir                    Directory in which all the data, models and labels are stored
+├── data_dir                    
     └── ori
         └── train
             └── labels.csv
@@ -9,7 +9,7 @@
         └── validate
         └── filtered
             └── train
-            └── validate
+            └── validation
 
     └── adv
         └── adv0

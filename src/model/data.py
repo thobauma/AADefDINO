@@ -200,7 +200,6 @@ class AdvTrainingImageDataset(Dataset):
         img = img.convert('RGB')
         filename= filename.split('.')[0]
         img=self.transform(img)
-        target=self.data['label'].iloc[index]
         red_target=self.data['reduced_label'].iloc[index]
 
-        return img, target, red_target, filename
+        return img, red_target, filename
