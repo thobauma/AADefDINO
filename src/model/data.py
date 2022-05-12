@@ -195,7 +195,7 @@ class AdvTrainingImageDataset(Dataset):
         return len(self.data)
   
     def __getitem__(self, index):
-        filename = self.data['file'].iloc[index]
+        filename = self.data['image'].iloc[index]
         img = Image.open(os.path.join(self.img_folder, filename))
         img = img.convert('RGB')
         filename= filename.split('.')[0]
