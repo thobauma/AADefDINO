@@ -49,7 +49,7 @@ parser.add_argument('--batch_size', default=64, type=int, help="batch size")
 parser.add_argument('--device', default='cuda', type=str, help="""cuda or not""")
 parser.add_argument('--pretrained_weights', default='', type=str, help="Path to pretrained weights to evaluate.")
 parser.add_argument('--arch', default='vit_small', type=str, help='Architecture')
-parser.add_argument('--epochs', default=100, type=int, help='Number of epochs of training.')
+parser.add_argument('--epochs', default=10, type=int, help='Number of epochs of training.')
 parser.add_argument("--lr", default=0.001, type=float, help="""Learning rate at the beginning of
     training (highest LR used during training). The learning rate is linearly scaled
     with the batch size, and specified here for a reference batch size of 256.

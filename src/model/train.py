@@ -26,7 +26,7 @@ def train(model,
           optimizer=None, 
           criterion=nn.CrossEntropyLoss(), 
           adversarial_attack=None, 
-          epochs=5, 
+          epochs=None, 
           val_freq=1, 
           batch_size=16, 
           lr=0.001, 
@@ -59,9 +59,12 @@ def train(model,
         avgpool_patchtokens = args.avgpool_patchtokens
         device = args.device
         num_labels = args.num_labels
-        log_dir = args.log_dir
-        tensor_dir = args.out_dir
-        epochs = args.epochs
+        if log_dir is None:
+            log_dir = args.log_dir
+        if tensor_dir is None:
+            tensor_dir = args.out_dir
+        if epochs is None:
+            epochs = args.epochs
         val_freq = args.val_freq
         lr = args.lr
         n = args.n_last_blocks
