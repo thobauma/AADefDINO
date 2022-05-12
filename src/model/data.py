@@ -171,17 +171,15 @@ class AdvTrainingImageDataset(Dataset):
                    img_folder: str, 
                    labels_file_name: str, 
                    transform: callable,
-                   index_subset: List[int] = None, 
-                   label_encoder=None):
+                   index_subset: List[int] = None):
         super().__init__()
         self.transform=transform
         self.img_folder=img_folder
         self.data = self.create_df(labels_file_name)
-        self.class_subset = class_subset
         self.index_subset=index_subset
-        self.prepare_data(label_encoder)
+        self.prepare_data()
 
-    def prepare_data(self, label_encoder):
+    def prepare_data(self):
         if self.index_subset is not None:
             data_subset = self.data.iloc[index_subset]
         else:
@@ -198,7 +196,7 @@ class AdvTrainingImageDataset(Dataset):
   
     def __getitem__(self, index):
         filename = self.data['file'].iloc[index]
-        img = Image.open(os.path.join(self.img_folder,filename))
+        img = Image.open(os.path.join(self.img_folder, filename))
         img = img.convert('RGB')
         filename= filename.split('.')[0]
         img=self.transform(img)

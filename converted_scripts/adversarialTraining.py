@@ -98,8 +98,8 @@ if __name__ == "__main__":
 
 
     # Remember to set the correct transformation
-    train_dataset = AdvTrainingImageDataset(TRAIN_PATH/'images', TRAIN_PATH/'labels.csv', ADVERSARIAL_TRAINING_TRANSFORM, CLASS_SUBSET, index_subset=None, label_encoder=label_encoder)
-    val_dataset = AdvTrainingImageDataset(VALIDATION_PATH/'images', VALIDATION_PATH/'labels.csv', ORIGINAL_TRANSFORM, CLASS_SUBSET, index_subset=None, label_encoder=label_encoder)
+    train_dataset = AdvTrainingImageDataset(TRAIN_PATH/'images', TRAIN_PATH/'labels.csv', ADVERSARIAL_TRAINING_TRANSFORM, index_subset=None)
+    val_dataset = AdvTrainingImageDataset(VALIDATION_PATH/'images', VALIDATION_PATH/'labels.csv', ORIGINAL_TRANSFORM, index_subset=None)
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=args.num_workers, pin_memory=args.pin_memory, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, num_workers=args.num_workers, pin_memory=args.pin_memory, shuffle=False)
 
