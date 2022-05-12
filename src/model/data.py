@@ -7,7 +7,7 @@ import pandas as pd
 from pathlib import Path
 from PIL import Image
 from torchvision import transforms as pth_transforms
-from typing import List, Callable
+from typing import List, Callable, Union
 from sklearn import preprocessing
 import os
 
@@ -38,11 +38,11 @@ ONLY_NORMALIZE_TRANSFORM = pth_transforms.Compose([
 
 class ImageDataset(Dataset):
   def __init__(self, 
-               img_folder: str, 
-               labels_file_name: str, 
+               img_folder: Union[Path, str], 
+               labels_file_name: Union[Path, str], 
                transform: callable, 
-               class_subset: List[int] = None, 
-               index_subset: List[int] = None, 
+               class_subset: Union[List[int],None] = None, 
+               index_subset: Union[List[int],None] = None, 
                label_encoder=None):
     super().__init__()
     self.transform=transform
@@ -86,10 +86,10 @@ class ImageDataset(Dataset):
 
 class PosthocForwardDataset(Dataset):
   def __init__(self, 
-               img_folder: str, 
-               labels_file_name: str, 
-               class_subset: List[int] = None, 
-               index_subset: List[int] = None):
+               img_folder: Union[str, Path], 
+               labels_file_name: Union[str, Path], 
+               class_subset: Union[List[int],None] = None, 
+               index_subset: Union[List[int],None] = None):
     super().__init__()
     # MAP CLASSES TO [0, NUM_CLASSES]
     self.img_folder=img_folder
@@ -168,11 +168,11 @@ class EnsembleDataset(torch.utils.data.Dataset):
     
 class AdvTrainingImageDataset(Dataset):
     def __init__(self, 
-                   img_folder: str, 
-                   labels_file_name: str, 
+                   img_folder: Union[str,Path], 
+                   labels_file_name: Union[str,Path], 
                    transform: callable, 
-                   class_subset: List[int] = None, 
-                   index_subset: List[int] = None, 
+                   class_subset: Union[List[int],None] = None, 
+                   index_subset: Union[List[int],None] = None, 
                    label_encoder=None):
         super().__init__()
         # MAP CLASSES TO [0, NUM_CLASSES]
@@ -185,7 +185,7 @@ class AdvTrainingImageDataset(Dataset):
 
     def prepare_data(self, label_encoder):
         if self.class_subset is None:
-            if index_subset is not None:
+            if self.index_subset is not None:
                 data_subset = self.data.iloc[index_subset]
             else:
                 data_subset = self.data

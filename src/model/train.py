@@ -33,7 +33,8 @@ def train(model,
           to_restore = {"epoch": 0, "best_acc": 0.}, 
           n=4, 
           avgpool_patchtokens=False, 
-          show_image=False):
+          show_image=False,
+          args = None):
 
     """ Trains a classifier ontop of a base model. The input can be perturbed by selecting an adversarial attack.
         
@@ -54,9 +55,21 @@ def train(model,
         :param avgpool_patchtokens: from DINO. Default: False
         
     """
+    if args is not None:
+        avgpool_patchtokens = args.avgpool_patchtokens
+        device = args.device
+        num_labels = args.num_labels
+        log_dir = args.log_dir
+        tensor_dir = args.out_dir
+        epochs = args.epochs
+        val_freq = args.val_freq
+        lr = args.lr
+        n = args.n_last_blocks
+        batch_size = args.batch_size
     if model is not None:
         model.cuda()
         model.eval()
+        
     classifier.cuda()
     if optimizer is None:
         optimizer = torch.optim.SGD(

@@ -5,7 +5,14 @@ import torch
 from torchvision import transforms as pth_transforms
 
 
-def get_dino(model_name='vit_small', patch_size=16, n_last_blocks=4, avgpool_patchtokens=False, device='cuda',classifier = True, pretrained_classifier = True, num_labels=1000):
+def get_dino(model_name='vit_small', patch_size=16, n_last_blocks=4, avgpool_patchtokens=False, device='cuda',classifier = True, pretrained_classifier = True, num_labels=1000, args=None):
+    if args is not None:
+        model_name = args.arch
+        patch_size = args.patch_size
+        n_last_blocks = args.n_last_blocks
+        avgpool_patchtokens = args.avgpool_patchtokens
+        device = args.device
+        num_labels = args.num_labels
     if model_name in vits.__dict__.keys():
         model = vits.__dict__[model_name](patch_size=patch_size, num_classes=0)
         embed_dim = model.embed_dim * (n_last_blocks + int(avgpool_patchtokens))
@@ -13,7 +20,8 @@ def get_dino(model_name='vit_small', patch_size=16, n_last_blocks=4, avgpool_pat
     else:
         print(f"Unknow architecture: {model_name}")
         sys.exit(1)
-    model.cuda()
+    if device == 'cuda':
+        model.cuda()
     model.eval()
     print(f"Model {model_name} built.")
     if classifier != True:
