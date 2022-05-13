@@ -113,7 +113,7 @@ if __name__ == "__main__":
         LOG_PATH = Path(args.log_dir, name)
     
         # Init model each time
-        pgd_classifier = LinearClassifier(base_linear_classifier.linear.in_features, num_labels=len(CLASS_SUBSET), hidden_size=2048).cuda()
+        pgd_classifier = LinearClassifier(base_linear_classifier.linear.in_features, num_labels=9, hidden_size=2048).cuda()
         vits = ViTWrapper(model, pgd_classifier)
         
         train_attack = PGD(vits, eps=attack['eps'], alpha=attack['alpha'], steps=attack['steps'])
