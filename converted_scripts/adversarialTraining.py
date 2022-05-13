@@ -81,13 +81,13 @@ class LinearClassifier(nn.Module):
         return self.linear4(x)
 
 attacks = [
-    (dict(eps=0.001, alpha=2/255, steps=10), '001'),
-    (dict(eps=0.003, alpha=2/255, steps=10), '003'),
-    (dict(eps=0.007, alpha=2/255, steps=10), '007'),
-    (dict(eps=0.01, alpha=4/255, steps=10), '01'),
-    (dict(eps=0.03, alpha=6/255, steps=10), '03'),
-    (dict(eps=0.1, alpha=6/255, steps=10), '1'),
-    (dict(eps=0.3, alpha=6/255, steps=10), '3')
+    (dict(eps=0.001, alpha=(0.001*2)/3, steps=3), 'pgd_001'),
+    (dict(eps=0.003, alpha=(0.003*2)/3, steps=3), 'pgd_003'),
+    (dict(eps=0.007, alpha=(0.007*2)/3, steps=3), 'pgd_007'),
+    (dict(eps=0.01, alpha=(0.01*2)/3, steps=3), 'pgd_01'),
+    (dict(eps=0.03, alpha=(0.03*2)/3, steps=3), 'pgd_03'),
+    (dict(eps=0.05, alpha=(0.05 * 2) / 3, steps=3), 'pgd_05'),
+    (dict(eps=0.1, alpha=(0.1 * 2) / 3, steps=3), 'pgd_1'),
 ]
 
 if __name__ == "__main__":
@@ -111,7 +111,6 @@ if __name__ == "__main__":
     for attack, name in attacks:
         # Logging path
         LOG_PATH = Path(args.log_dir, name)
-
     
         # Init model each time
         pgd_classifier = LinearClassifier(base_linear_classifier.linear.in_features, num_labels=len(CLASS_SUBSET), hidden_size=2048).cuda()
