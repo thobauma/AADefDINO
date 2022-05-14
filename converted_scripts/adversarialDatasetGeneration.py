@@ -79,8 +79,12 @@ def advDatasetGeneration(args, attacks):
     model_wrap = ViTWrapper(model, linear_classifier, device=args.device, n_last_blocks=4, avgpool_patchtokens=False)
     model_wrap = model_wrap.to(args.device)
     for atk, name in attacks:
-        STORE_PATH = Path(args.out_dir, 'adversarial_data_tensors', name)
-
+        if args.out_dir is None:
+            STORE_PATH = args.data_root
+        else:
+            STORE_PATH = args.out_dir
+        
+        STORE_PATH = Path(STORE_PATH, 'adversarial_data_tensors', name)
         train_dataset = AdvTrainingImageDataset(TRAIN_PATH/'images', 
                                                 TRAIN_PATH/'labels.csv', 
                                                 ORIGINAL_TRANSFORM, 

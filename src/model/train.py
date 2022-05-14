@@ -122,11 +122,16 @@ def train(model,
         
         # validate
         if epoch % val_freq == 0 or epoch == epochs - 1:
+            if tensor_dir is not None:
+                tensor_dir_epoch = Path(tensor_dir, epoch)
+                tensor_dir_epoch.mkdir(parents=True, exist_ok=True)
+            else:
+                tensor_dir_epoch = tensor_dir
             test_stats, metric_logger = validate_network(model=model, 
                                                          classifier=classifier, 
                                                          validation_loader=validation_loader, 
                                                          criterion=criterion,
-                                                         tensor_dir=tensor_dir, 
+                                                         tensor_dir=tensor_dir_epoch, 
                                                          adversarial_attack=adversarial_attack, 
                                                          n=n, 
                                                          avgpool_patchtokens=avgpool_patchtokens, 
@@ -293,7 +298,8 @@ def validate_network(model,
     if tensor_dir is not None:
         tensor_dir.mkdir(parents=True, exist_ok=True)
         if adversarial_attack is not None:
-            adv_tensor_dir = Path(tensor_dir,'adv').mkdir(parents=True, exist_ok=True)
+            adv_tensor_dir = Path(tensor_dir,'adv')
+            adv_tensor_dir.mkdir(parents=True, exist_ok=True)
     
     if log_interval is None:
         if len(validation_loader)<20:
