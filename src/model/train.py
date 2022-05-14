@@ -85,6 +85,7 @@ def train(model,
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs, eta_min=0)
     
     # Optionally resume from a checkpoint
+    log_dir = Path(log_dir)
     log_dir.mkdir(parents=True, exist_ok=True)
     utils.restart_from_checkpoint(
         Path(log_dir, "checkpoint.pth.tar"),
