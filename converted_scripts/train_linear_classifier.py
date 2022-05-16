@@ -62,7 +62,7 @@ if __name__ == "__main__":
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=args.num_workers, pin_memory=args.pin_memory, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, num_workers=args.num_workers, pin_memory=args.pin_memory, shuffle=False)
 
-    print(f'train:      {len(train_dataset)}\nvalidation:  {len(val_dataset)}')
+    print(f'''train:      {len(train_dataset)}\nvalidation:  {len(val_dataset)}''')
 
     model, base_linear_classifier = get_dino(args=args)
 
