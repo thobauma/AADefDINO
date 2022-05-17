@@ -110,8 +110,8 @@ if __name__ == "__main__":
     model, base_linear_classifier = get_dino(args=args)
     
     # Fixed head. Load from disk.
-    dino_head = LinearClassifier(base_linear_classifier.linear.in_features, num_labels=9, hidden_size=2048).cuda()
-    dino_head.load_state_dict(torch.load(args.head_path))
+    dino_head = LinearClassifier(base_linear_classifier.linear.in_features, num_labels=9, hidden_size=2048)
+    dino_head.load_state_dict(torch.load(args.head_path)).cuda()
     
     # Build wrapper (backbone + head)
     vits = ViTWrapper(model, dino_head)
