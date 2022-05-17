@@ -81,13 +81,13 @@ class LinearClassifier(nn.Module):
         return self.linear4(x)
 
 attacks = [
-    (dict(eps=0.001, alpha=(0.001*2)/3, steps=3), 'pgd_001'),
-    (dict(eps=0.003, alpha=(0.003*2)/3, steps=3), 'pgd_003'),
-    (dict(eps=0.007, alpha=(0.007*2)/3, steps=3), 'pgd_007'),
-    (dict(eps=0.01, alpha=(0.01*2)/3, steps=3), 'pgd_01'),
-    (dict(eps=0.03, alpha=(0.03*2)/3, steps=3), 'pgd_03'),
-    (dict(eps=0.05, alpha=(0.05 * 2) / 3, steps=3), 'pgd_05'),
-    (dict(eps=0.1, alpha=(0.1 * 2) / 3, steps=3), 'pgd_1'),
+    (dict(eps=0.001, alpha=(0.001*2)/3, steps=3), 'pgd_001_new'),
+   (dict(eps=0.003, alpha=(0.003*2)/3, steps=3), 'pgd_003_new'),
+#    (dict(eps=0.007, alpha=(0.007*2)/3, steps=3), 'pgd_007'),
+#    (dict(eps=0.01, alpha=(0.01*2)/3, steps=3), 'pgd_01_test'),
+#    (dict(eps=0.03, alpha=(0.03*2)/3, steps=3), 'pgd_03'),
+#    (dict(eps=0.05, alpha=(0.05 * 2) / 3, steps=3), 'pgd_05'),
+#    (dict(eps=0.1, alpha=(0.1 * 2) / 3, steps=3), 'pgd_1'),
 ]
 
 if __name__ == "__main__":
@@ -96,31 +96,38 @@ if __name__ == "__main__":
     TRAIN_PATH = args.filtered_data/'train'
     VALIDATION_PATH = args.filtered_data/'validation'
 
-
     # Remember to set the correct transformation
-    train_dataset = AdvTrainingImageDataset(TRAIN_PATH/'images', TRAIN_PATH/'labels.csv', ADVERSARIAL_TRAINING_TRANSFORM, index_subset=None)
+    train_dataset = AdvTrainingImageDataset(TRAIN_PATH/'images', TRAIN_PATH/'labels.csv', ORIGINAL_TRANSFORM, index_subset=None)
     val_dataset = AdvTrainingImageDataset(VALIDATION_PATH/'images', VALIDATION_PATH/'labels.csv', ORIGINAL_TRANSFORM, index_subset=None)
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=args.num_workers, pin_memory=args.pin_memory, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, num_workers=args.num_workers, pin_memory=args.pin_memory, shuffle=False)
+    
+    # Assert we included the classification head as argument
+    assert args.head_path, "You should provide a path to the pretrained classification head"
 
     print(f'train:      {len(train_dataset)}\nvalidation:  {len(val_dataset)}')
 
     model, base_linear_classifier = get_dino(args=args)
-
+    
+    # Fixed head. Load from disk.
+    dino_head = LinearClassifier(base_linear_classifier.linear.in_features, num_labels=9, hidden_size=2048).cuda()
+    dino_head.load_state_dict(torch.load(args.head_path))
+    
+    # Build wrapper (backbone + head)
+    vits = ViTWrapper(model, dino_head)
 
     for attack, name in attacks:
         # Logging path
         LOG_PATH = Path(args.log_dir, name)
     
         # Init model each time
-        pgd_classifier = LinearClassifier(base_linear_classifier.linear.in_features, num_labels=9, hidden_size=2048).cuda()
-        vits = ViTWrapper(model, pgd_classifier)
+        adversarial_classifier = LinearClassifier(base_linear_classifier.linear.in_features, num_labels=9, hidden_size=2048).cuda()
         
         train_attack = PGD(vits, eps=attack['eps'], alpha=attack['alpha'], steps=attack['steps'])
     
         # Train
         loggers = train(model, 
-                pgd_classifier,
+                adversarial_classifier,
                 train_loader,
                 val_loader, 
                 LOG_PATH, 
