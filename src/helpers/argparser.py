@@ -63,3 +63,4 @@ parser.add_argument('--avgpool_patchtokens', default=False, type=bool_flag,
     help="""Whether ot not to concatenate the global average pooled features to the [CLS] token.
     We typically set this to False for ViT-Small and to True with ViT-Base.""")
 parser.add_argument('--pin_memory', default=True, type=bool_flag, help='Whether to use pinned memory or not.')
+parser.add_argument('--head_path', default=None, type=string, help='Path to the pretrained classification head')
