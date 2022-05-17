@@ -19,7 +19,7 @@ import sys
 
 # local
 # from src.helpers.helpers import get_random_indexes, get_random_classes
-from src.model.dino_model import get_dino, ViTWrapper
+from src.model.dino_model import get_dino, ViTWrapper, LinearClassifier
 from src.helpers.argparser import parser
 from src.model.data import *
 from src.model.train import *
@@ -39,7 +39,7 @@ np.random.seed(SEED)
 # label_encoder.fit([i for i in CLASS_SUBSET])
 
 
-class LinearClassifier(nn.Module):
+class AdvLinearClassifier(nn.Module):
     """Linear layer to train on top of frozen features"""
     def __init__(self, dim, num_labels=1000, hidden_size=512):
         super(LinearClassifier, self).__init__()
@@ -110,17 +110,18 @@ if __name__ == "__main__":
     model, base_linear_classifier = get_dino(args=args)
     
     # Fixed head. Load from disk.
-    base_linear_classifier.load_state_dict(torch.load(args.head_path)).cuda()
+    classification_head = LinearClassifier(dim=base_linear_classifier.linear.in_features,num_labels=9)
+    classification_head.load_state_dict(torch.load(args.head_path)).cuda()
     
     # Build wrapper (backbone + head)
-    vits = ViTWrapper(model, base_linear_classifier)
+    vits = ViTWrapper(model, classification_head)
 
     for attack, name in attacks:
         # Logging path
         LOG_PATH = Path(args.log_dir, name)
     
         # Init model each time
-        adversarial_classifier = LinearClassifier(base_linear_classifier.linear.in_features, num_labels=9, hidden_size=2048).cuda()
+        adversarial_classifier = AdvLinearClassifier(base_linear_classifier.linear.in_features, num_labels=9, hidden_size=2048).cuda()
         
         train_attack = PGD(vits, eps=attack['eps'], alpha=attack['alpha'], steps=attack['steps'])
     
