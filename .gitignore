@@ -5,3 +5,4 @@ colabs/old
 __pycache__/
 setup/test.out
 data_dir
+lsf.*
