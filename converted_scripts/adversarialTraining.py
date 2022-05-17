@@ -32,17 +32,10 @@ torch.manual_seed(SEED)
 np.random.seed(SEED)
 
 
-
-# from sklearn import preprocessing
-
-# label_encoder = preprocessing.LabelEncoder()
-# label_encoder.fit([i for i in CLASS_SUBSET])
-
-
 class AdvLinearClassifier(nn.Module):
     """Linear layer to train on top of frozen features"""
     def __init__(self, dim, num_labels=1000, hidden_size=512):
-        super(LinearClassifier, self).__init__()
+        super(AdvLinearClassifier, self).__init__()
         self.num_labels = num_labels
         
         self.linear1 = nn.Linear(dim, hidden_size)
@@ -81,14 +74,15 @@ class AdvLinearClassifier(nn.Module):
         return self.linear4(x)
 
 attacks = [
-    (dict(eps=0.001, alpha=(0.001*2)/3, steps=3), 'pgd_001_new'),
-   (dict(eps=0.003, alpha=(0.003*2)/3, steps=3), 'pgd_003_new'),
+    #(dict(eps=0.001, alpha=(0.001*2)/3, steps=3), 'pgd_001_new'),
+   # (dict(eps=0.003, alpha=(0.003*2)/3, steps=3), 'pgd_003_new'),
 #    (dict(eps=0.007, alpha=(0.007*2)/3, steps=3), 'pgd_007'),
 #    (dict(eps=0.01, alpha=(0.01*2)/3, steps=3), 'pgd_01_test'),
-#    (dict(eps=0.03, alpha=(0.03*2)/3, steps=3), 'pgd_03'),
-#    (dict(eps=0.05, alpha=(0.05 * 2) / 3, steps=3), 'pgd_05'),
+    (dict(eps=0.03, alpha=(0.03*2)/3, steps=3), 'pgd_03_newhead'),
+   (dict(eps=0.05, alpha=(0.05 * 2) / 3, steps=3), 'pgd_05_newhead'),
 #    (dict(eps=0.1, alpha=(0.1 * 2) / 3, steps=3), 'pgd_1'),
 ]
+
 
 if __name__ == "__main__":
 
@@ -111,7 +105,8 @@ if __name__ == "__main__":
     
     # Fixed head. Load from disk.
     classification_head = LinearClassifier(dim=base_linear_classifier.linear.in_features,num_labels=9)
-    classification_head.load_state_dict(torch.load(args.head_path)).cuda()
+    classification_head.load_state_dict(torch.load(args.head_path)['state_dict'])
+    classification_head.cuda()
     
     # Build wrapper (backbone + head)
     vits = ViTWrapper(model, classification_head)
@@ -131,7 +126,7 @@ if __name__ == "__main__":
                 train_loader,
                 val_loader, 
                 LOG_PATH, 
-                epochs=5,
+                epochs=3,
                 adversarial_attack=train_attack,
                 show_image=False,
                 args=args
