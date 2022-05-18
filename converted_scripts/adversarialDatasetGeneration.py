@@ -4,6 +4,7 @@ import getpass
 import numpy as np
 import time
 import torch
+import PIL
 from torch import nn
 from tqdm import tqdm
 from torch.utils.data.dataloader import DataLoader
@@ -125,7 +126,7 @@ def advDatasetGeneration(args, attacks):
 
 
             for adv_img, img_name in zip(adv_images, img_names):
-                torch.save(adv_img, Path(STORE_IMAGES_PATH, Path(img_name.split('.')[0])))
+                save_image(adv_img, fp=Path(STORE_IMAGES_PATH, img_name), format= "JPEG")
             
             true_labels.extend(labels.detach().cpu().tolist())
             adv_labels.extend(pre.detach().cpu().tolist())
@@ -184,7 +185,7 @@ def advDatasetGeneration(args, attacks):
 
             
             for adv_img, img_name in zip(adv_images, img_names):
-                torch.save(adv_img, Path(STORE_IMAGES_PATH, Path(img_name.split('.')[0])))
+                save_image(adv_img, fp=Path(STORE_IMAGES_PATH, img_name), format= "JPEG")
                 
             true_labels.extend(labels.detach().cpu().tolist())
             adv_labels.extend(pre.detach().cpu().tolist())
