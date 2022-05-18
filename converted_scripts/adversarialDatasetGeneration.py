@@ -53,15 +53,6 @@ np.random.seed(SEED)
 
 
 
-attacks = [
-    PGD(model_wrap, eps=0.001, alpha=(0.001*2)/3, steps=3),
-    PGD(model_wrap, eps=0.03, alpha=(0.03*2)/3, steps=3),
-    PGD(model_wrap, eps=0.1, alpha=(0.1*2)/3, steps=3),
-    FGSM(model_wrap, eps=0.001),
-    FGSM(model_wrap, eps=0.03),
-    FGSM(model_wrap, eps=0.1),
-    CW(model_wrap, c=50)
-]
 
 def advDatasetGeneration(args, attacks):
     TRAIN_PATH = args.filtered_data/'train'
@@ -74,6 +65,15 @@ def advDatasetGeneration(args, attacks):
     linear_classifier.to(args.device)
     model_wrap = ViTWrapper(model, linear_classifier, device=args.device, n_last_blocks=4, avgpool_patchtokens=False)
     model_wrap = model_wrap.to(args.device)
+    attacks = [
+        PGD(model_wrap, eps=0.001, alpha=(0.001*2)/3, steps=3),
+        PGD(model_wrap, eps=0.03, alpha=(0.03*2)/3, steps=3),
+        PGD(model_wrap, eps=0.1, alpha=(0.1*2)/3, steps=3),
+        FGSM(model_wrap, eps=0.001),
+        FGSM(model_wrap, eps=0.03),
+        FGSM(model_wrap, eps=0.1),
+        CW(model_wrap, c=50)
+    ]
     for atk, name in attacks:
         if args.out_dir is None:
             STORE_PATH = args.data_root
