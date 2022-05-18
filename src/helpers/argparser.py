@@ -46,7 +46,7 @@ parser.add_argument('--log_dir', default=DATA/'models', action=convertStringToPa
 parser.add_argument('--num_labels', default=1000, type=int, help='Number of labels for linear classifier')
 parser.add_argument('--batch_size', default=64, type=int, help="batch size")
 parser.add_argument('--device', default='cuda', type=str, help="""cuda or not""")
-parser.add_argument('--pretrained_weights', default='', type=str, help="Path to pretrained weights to evaluate.")
+parser.add_argument('--pretrained_weights', default=None, type=str, help="Path to pretrained weights to evaluate.")
 parser.add_argument('--arch', default='vit_small', type=str, help='Architecture')
 parser.add_argument('--epochs', default=10, type=int, help='Number of epochs of training.')
 parser.add_argument("--lr", default=0.001, type=float, help="""Learning rate at the beginning of
@@ -63,4 +63,4 @@ parser.add_argument('--avgpool_patchtokens', default=False, type=bool_flag,
     help="""Whether ot not to concatenate the global average pooled features to the [CLS] token.
     We typically set this to False for ViT-Small and to True with ViT-Base.""")
 parser.add_argument('--pin_memory', default=True, type=bool_flag, help='Whether to use pinned memory or not.')
-parser.add_argument('--head_path', default=None, type=str, help='Path to the pretrained classification head')
+parser.add_argument('--head_path', default=DATA/'models/base_lin_clf/checkpoint.pth.tar', type=str, help='Path to the pretrained classification head')

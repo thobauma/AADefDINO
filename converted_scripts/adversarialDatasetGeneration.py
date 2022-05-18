@@ -61,7 +61,7 @@ def advDatasetGeneration(args, attacks):
     model, dino_classifier = get_dino(args.arch)
     linear_classifier = LinearClassifier(dino_classifier.linear.in_features, 
                          num_labels=9)
-    linear_classifier.load_state_dict(torch.load(Path(args.pretrained_weights)))
+    linear_classifier.load_state_dict(torch.load(Path(args.head_path))['state_dict'])
     linear_classifier.to(args.device)
     model_wrap = ViTWrapper(model, linear_classifier, device=args.device, n_last_blocks=4, avgpool_patchtokens=False)
     model_wrap = model_wrap.to(args.device)
