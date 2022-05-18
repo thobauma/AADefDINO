@@ -2,6 +2,7 @@ from dino import vision_transformer as vits
 from dino.eval_linear import LinearClassifier
 from dino import utils
 import torch
+from torch import nn
 from torchvision import transforms as pth_transforms
 
 # Taken from DINO official repo
