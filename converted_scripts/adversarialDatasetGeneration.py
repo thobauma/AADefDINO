@@ -53,19 +53,15 @@ np.random.seed(SEED)
 
 
 
-# from sklearn import preprocessing
-
-# label_encoder = preprocessing.LabelEncoder()
-# label_encoder.fit([i for i in CLASS_SUBSET])
-
-
-
-
-
-attacks = {'pgd': PGD(model_wrap, eps=0.03, alpha=0.015, steps=20),
-            'cw': CW(model_wrap, c=50, lr=0.0031, steps=30),
-            'fgsm': FGSM(model_wrap, eps=0.06)}
-
+attacks = [
+    PGD(model_wrap, eps=0.001, alpha=(0.001*2)/3, steps=3),
+    PGD(model_wrap, eps=0.03, alpha=(0.03*2)/3, steps=3),
+    PGD(model_wrap, eps=0.1, alpha=(0.1*2)/3, steps=3),
+    FGSM(model_wrap, eps=0.001),
+    FGSM(model_wrap, eps=0.03),
+    FGSM(model_wrap, eps=0.1),
+    CW(model_wrap, c=50)
+]
 
 def advDatasetGeneration(args, attacks):
     TRAIN_PATH = args.filtered_data/'train'
@@ -73,7 +69,7 @@ def advDatasetGeneration(args, attacks):
 
     model, dino_classifier = get_dino(args.arch)
     linear_classifier = LinearClassifier(dino_classifier.linear.in_features, 
-                         num_labels=len(CLASS_SUBSET))
+                         num_labels=9)
     linear_classifier.load_state_dict(torch.load(Path(args.pretrained_weights)))
     linear_classifier.to(args.device)
     model_wrap = ViTWrapper(model, linear_classifier, device=args.device, n_last_blocks=4, avgpool_patchtokens=False)
@@ -84,13 +80,10 @@ def advDatasetGeneration(args, attacks):
         else:
             STORE_PATH = args.out_dir
         
-        STORE_PATH = Path(STORE_PATH, 'adversarial_data_tensors', name)
+        STORE_PATH = Path(STORE_PATH, 'adv', name)
         train_dataset = AdvTrainingImageDataset(TRAIN_PATH/'images', 
                                                 TRAIN_PATH/'labels.csv', 
-                                                ORIGINAL_TRANSFORM, 
-                                                CLASS_SUBSET, 
-                                                index_subset=None, 
-                                                label_encoder=label_encoder)
+                                                ORIGINAL_TRANSFORM)
         train_loader = DataLoader(train_dataset, 
                                   batch_size=args.batch_size, 
                                   num_workers=args.num_workers, 
@@ -144,19 +137,16 @@ def advDatasetGeneration(args, attacks):
         print('Accuracy against attack: %.2f %%' % (100 * float(correct) / len(train_loader.dataset)))
         print(f'''\n''')
         
-        data_dict = {'file': names, 'true_labels':true_labels, name+'_pred':adv_labels}
+        data_dict = {'image': names, 'reduced_label':true_labels, name+'_pred':adv_labels}
         df = pd.DataFrame(data_dict)
-        df['file'] = df['file'].str.split('.').str[0]
-        df.to_csv(STORE_LABEL_PATH, sep=",", index=None)
+        df['image'] = df['image'].str.split('.').str[0]
+        df.to_csv(STORE_LABEL_PATH, sep=",")
         
         print('Validation set')
         
         val_dataset = AdvTrainingImageDataset(VALIDATION_PATH/'images', 
                                       VALIDATION_PATH/'labels.csv', 
-                                      ORIGINAL_TRANSFORM, 
-                                      CLASS_SUBSET, 
-                                      index_subset=None, 
-                                      label_encoder=label_encoder)
+                                      ORIGINAL_TRANSFORM)
         val_loader = DataLoader(val_dataset, 
                                 batch_size=args.batch_size, 
                                 num_workers=args.num_workers, 
@@ -203,10 +193,10 @@ def advDatasetGeneration(args, attacks):
         print('Total elapsed time (sec): %.2f' % (time.time() - start))
         print('Accuracy against attack: %.2f %%' % (100 * float(correct) / len(val_loader.dataset)))
 
-        data_dict = {'file': names, 'true_labels':true_labels, name+'_pred':adv_labels}
+        data_dict = {'image': names, 'reduced_label':true_labels, name+'_pred':adv_labels}
         df = pd.DataFrame(data_dict)
-        df['file'] = df['file'].str.split('.').str[0]
-        df.to_csv(STORE_LABEL_PATH, sep=",", index=None)
+        df['image'] = df['image'].str.split('.').str[0]
+        df.to_csv(STORE_LABEL_PATH, sep=",")
         print(f'''\n''')
 
 
