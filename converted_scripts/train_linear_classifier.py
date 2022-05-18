@@ -1,3 +1,4 @@
+# %%
 import os
 from pathlib import Path
 import getpass
@@ -50,7 +51,7 @@ class LinearClassifier(nn.Module):
 
 
 if __name__ == "__main__":
-
+# %%
     args = parser.parse_args()
     TRAIN_PATH = args.filtered_data/'train'
     VALIDATION_PATH = args.filtered_data/'validation'
@@ -75,7 +76,7 @@ if __name__ == "__main__":
     classifier = LinearClassifier(base_linear_classifier.linear.in_features).cuda()
     vits = ViTWrapper(model, classifier)
     
-
+# %%
     # Train
     loggers = train(model, 
             classifier,

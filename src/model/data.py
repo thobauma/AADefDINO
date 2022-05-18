@@ -40,7 +40,7 @@ class ImageDataset(Dataset):
   def __init__(self, 
                img_folder: Union[Path, str], 
                labels_file_name: Union[Path, str], 
-               transform: callable, 
+               transform: Callable, 
                class_subset: Union[List[int],None] = None, 
                index_subset: Union[List[int],None] = None, 
                label_encoder=None):
@@ -170,8 +170,8 @@ class AdvTrainingImageDataset(Dataset):
     def __init__(self, 
                    img_folder: str, 
                    labels_file_name: str, 
-                   transform: callable,
-                   index_subset: List[int] = None):
+                   transform: Callable,
+                   index_subset: Union[List[int],None] = None):
         super().__init__()
         self.transform=transform
         self.img_folder=img_folder

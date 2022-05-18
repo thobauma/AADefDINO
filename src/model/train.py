@@ -172,7 +172,8 @@ def train_epoch(model,
                 epoch=0, 
                 n=4, 
                 avgpool_patchtokens=False, 
-                show_image=False):
+                show_image=False,
+                log_interval=None):
     """ Trains a classifier ontop of a base model. The input can be perturbed by selecting an adversarial attack.
         
         :param model: base model (frozen)
@@ -191,13 +192,13 @@ def train_epoch(model,
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
     header = 'Epoch: [{}]'.format(epoch)
-    
-    if len(train_loader)<20:
-        log_interval = 1
-    elif len(train_loader)<100:
-        log_interval = 5
-    else:
-        log_interval = 20   
+    if log_interval is not None:
+        if len(train_loader)<20:
+            log_interval = 1
+        elif len(train_loader)<100:
+            log_interval = 5
+        else:
+            log_interval = 20   
     
     for (inp, target, names) in metric_logger.log_every(train_loader, log_interval, header):
         

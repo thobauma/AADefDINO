@@ -18,7 +18,6 @@ def bool_flag(s):
 
 class convertStringToPathAction(argparse.Action):
     """convert string to a Path"""
-
     def __call__(self, parser, namespace, values, option_string) -> None:
         if isinstance(values, str) or isinstance(values, Path):
             path = Path(values)
@@ -59,6 +58,7 @@ parser.add_argument('--num_workers', default=0, type=int, help='Number of data l
 parser.add_argument('--n_last_blocks', default=4, type=int, help="""Concatenate [CLS] tokens
     for the `n` last blocks. We use `n=4` when evaluating ViT-Small and `n=1` with ViT-Base.""")
 parser.add_argument('--val_freq', default=1, type=int, help="Epoch frequency for validation.")
+parser.add_argument('--log_interval', default=None, type=int, help="Log interval while training.")
 parser.add_argument('--avgpool_patchtokens', default=False, type=bool_flag,
     help="""Whether ot not to concatenate the global average pooled features to the [CLS] token.
     We typically set this to False for ViT-Small and to True with ViT-Base.""")
