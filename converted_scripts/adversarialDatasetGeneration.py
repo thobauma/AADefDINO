@@ -55,7 +55,7 @@ np.random.seed(SEED)
 
 
 
-def advDatasetGeneration(args, attacks):
+def advDatasetGeneration(args):
     TRAIN_PATH = args.filtered_data/'train'
     VALIDATION_PATH = args.filtered_data/'validation'
 
@@ -70,10 +70,10 @@ def advDatasetGeneration(args, attacks):
         (PGD(model_wrap, eps=0.001, alpha=(0.001*2)/3, steps=3), "pgd_0001"),
         (PGD(model_wrap, eps=0.03, alpha=(0.03*2)/3, steps=3),"pgd_003"),
         (PGD(model_wrap, eps=0.1, alpha=(0.1*2)/3, steps=3),"pgd_01"),
-        (FGSM(model_wrap, eps=0.001),"fgsm_0001"),
-        (FGSM(model_wrap, eps=0.03),"fgsm_003"),
-        (FGSM(model_wrap, eps=0.1),"fgsm_01"),
-        (CW(model_wrap, c=50),"cw_50")
+        # (FGSM(model_wrap, eps=0.001),"fgsm_0001"),
+        # (FGSM(model_wrap, eps=0.03),"fgsm_003"),
+        # (FGSM(model_wrap, eps=0.1),"fgsm_01"),
+        # (CW(model_wrap, c=50),"cw_50")
     ]
     for atk, name in attacks:
         if args.out_dir is None:
@@ -126,7 +126,8 @@ def advDatasetGeneration(args, attacks):
 
 
             for adv_img, img_name in zip(adv_images, img_names):
-                save_image(adv_img, fp=Path(STORE_IMAGES_PATH, img_name), format= "JPEG")
+                torch.save(adv_img, Path(STORE_IMAGES_PATH, Path(img_name.split('.')[0])))
+                # save_image(adv_img, fp=Path(STORE_IMAGES_PATH, img_name), format= "JPEG")
             
             true_labels.extend(labels.detach().cpu().tolist())
             adv_labels.extend(pre.detach().cpu().tolist())
@@ -185,7 +186,8 @@ def advDatasetGeneration(args, attacks):
 
             
             for adv_img, img_name in zip(adv_images, img_names):
-                save_image(adv_img, fp=Path(STORE_IMAGES_PATH, img_name), format= "JPEG")
+                torch.save(adv_img, Path(STORE_IMAGES_PATH, Path(img_name.split('.')[0])))
+                # save_image(adv_img, fp=Path(STORE_IMAGES_PATH, img_name), format= "JPEG")
                 
             true_labels.extend(labels.detach().cpu().tolist())
             adv_labels.extend(pre.detach().cpu().tolist())
@@ -207,7 +209,7 @@ if __name__ == '__main__':
     parser.add_argument('--attack', default='all', type=str, help="""type of attack""")
 
     args = parser.parse_args()
-    advDatasetGeneration(args, attacks)
+    advDatasetGeneration(args)
 
 
     
