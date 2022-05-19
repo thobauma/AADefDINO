@@ -73,7 +73,7 @@ def advDatasetGeneration(args):
         # (FGSM(model_wrap, eps=0.001),"fgsm_0001"),
         # (FGSM(model_wrap, eps=0.03),"fgsm_003"),
         # (FGSM(model_wrap, eps=0.1),"fgsm_01"),
-        # (CW(model_wrap, c=50),"cw_50")
+        # (CW(model_wrap, c=50, steps=25),"cw_50")
     ]
     for atk, name in attacks:
         if args.out_dir is None:
@@ -126,7 +126,8 @@ def advDatasetGeneration(args):
 
 
             for adv_img, img_name in zip(adv_images, img_names):
-                torch.save(adv_img, Path(STORE_IMAGES_PATH, Path(img_name.split('.')[0])))
+                detached_adv_img = adv_img.detach().cpu()
+                torch.save(detached_adv_img, Path(STORE_IMAGES_PATH, Path(img_name.split('.')[0])))
                 # save_image(adv_img, fp=Path(STORE_IMAGES_PATH, img_name), format= "JPEG")
             
             true_labels.extend(labels.detach().cpu().tolist())
@@ -186,7 +187,8 @@ def advDatasetGeneration(args):
 
             
             for adv_img, img_name in zip(adv_images, img_names):
-                torch.save(adv_img, Path(STORE_IMAGES_PATH, Path(img_name.split('.')[0])))
+                detached_adv_img = adv_img.detach().cpu()
+                torch.save(detached_adv_img, Path(STORE_IMAGES_PATH, Path(img_name.split('.')[0])))
                 # save_image(adv_img, fp=Path(STORE_IMAGES_PATH, img_name), format= "JPEG")
                 
             true_labels.extend(labels.detach().cpu().tolist())
