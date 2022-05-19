@@ -15,7 +15,6 @@ import sys
 [sys.path.append(i) for i in ['.', '..']]
 
 # local
-from src.helpers.helpers import get_random_indexes, get_random_classes
 from src.helpers.argparser import parser
 from src.model.dino_model import get_dino, ViTWrapper
 from src.model.data import *
@@ -27,7 +26,7 @@ import torch.optim as optim
 from torchvision import transforms as pth_transforms
 from torchvision.utils import save_image
 
-
+from torchvision.models.resnet import ResNet, Bottleneck
 
 class LinearClassifier(nn.Module):
     """Linear layer to train on top of frozen features"""
@@ -44,6 +43,37 @@ class LinearClassifier(nn.Module):
 
         # linear layer
         return self.linear(x)
+    
+class CustomResNet(ResNet):
+    def __init__(self, classifier=None):
+        super(CustomResNet, self).__init__(block=Bottleneck, layers=[3, 4, 6, 3])
+        self.load_state_dict(torch.load("/cluster/scratch/jrando/resnet/resnet.pth"))
+        del self.fc
+        
+        self.classifier = classifier
+        
+    def _forward_impl(self, x):
+        # Normalize
+        transform = pth_transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
+        x = transform(x)
+        
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = self.relu(x)
+        x = self.maxpool(x)
+
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
+        x = self.layer4(x)
+
+        x = self.avgpool(x)
+        x = torch.flatten(x, 1)
+        
+        if self.classifier:
+            x = self.classifier(x)
+
+        return x
 
 
 # seed
@@ -52,29 +82,30 @@ random.seed(SEED)
 torch.manual_seed(SEED)
 np.random.seed(SEED)
 
+# bsub -n 4 -R "rusage[mem=10240]" -R "rusage[ngpus_excl_p=1]" -W "24:00" "python3 converted_scripts/train_linear_classifier.py --arch vit_base --n_last_blocks 1 --avgpool_patchtokens True"
 
 
 
-def advDatasetGeneration(args, attacks):
+def advDatasetGeneration(args, attacks=None):
     TRAIN_PATH = args.filtered_data/'train'
     VALIDATION_PATH = args.filtered_data/'validation'
-
-    model, dino_classifier = get_dino(args.arch)
-    linear_classifier = LinearClassifier(dino_classifier.linear.in_features, 
-                         num_labels=9)
+    
+    linear_classifier = LinearClassifier(2048, 9)
     linear_classifier.load_state_dict(torch.load(Path(args.head_path))['state_dict'])
     linear_classifier.to(args.device)
-    model_wrap = ViTWrapper(model, linear_classifier, device=args.device, n_last_blocks=4, avgpool_patchtokens=False)
-    model_wrap = model_wrap.to(args.device)
+
+    model = CustomResNet(classifier=linear_classifier).to(args.device)
+    
     attacks = [
-        (PGD(model_wrap, eps=0.001, alpha=(0.001*2)/3, steps=3), "pgd_0001"),
-        (PGD(model_wrap, eps=0.03, alpha=(0.03*2)/3, steps=3),"pgd_003"),
-        (PGD(model_wrap, eps=0.1, alpha=(0.1*2)/3, steps=3),"pgd_01"),
-        (FGSM(model_wrap, eps=0.001),"fgsm_0001"),
-        (FGSM(model_wrap, eps=0.03),"fgsm_003"),
-        (FGSM(model_wrap, eps=0.1),"fgsm_01"),
-        (CW(model_wrap, c=50),"cw_50")
+        #(PGD(model, eps=0.001, alpha=(0.001*2)/3, steps=3), "pgd_0001"),
+        #(PGD(model, eps=0.03, alpha=(0.03*2)/3, steps=3),"pgd_003"),
+        (PGD(model, eps=0.1, alpha=(0.1*2)/3, steps=3),"pgd_01"),
+        #(FGSM(model, eps=0.001),"fgsm_0001"),
+        #(FGSM(model, eps=0.03),"fgsm_003"),
+        #(FGSM(model, eps=0.1),"fgsm_01"),
+        #(CW(model, c=50),"cw_50")
     ]
+    
     for atk, name in attacks:
         if args.out_dir is None:
             STORE_PATH = args.data_root
@@ -82,66 +113,6 @@ def advDatasetGeneration(args, attacks):
             STORE_PATH = args.out_dir
         
         STORE_PATH = Path(STORE_PATH, 'adv', name)
-        train_dataset = AdvTrainingImageDataset(TRAIN_PATH/'images', 
-                                                TRAIN_PATH/'labels.csv', 
-                                                ORIGINAL_TRANSFORM)
-        train_loader = DataLoader(train_dataset, 
-                                  batch_size=args.batch_size, 
-                                  num_workers=args.num_workers, 
-                                  pin_memory=args.pin_memory, 
-                                  shuffle=False)
-
-        print("-"*70)
-        print(atk)
-        print('train set')
-
-        STORE_LABEL_PATH = Path(STORE_PATH, 'train', 'labels.csv')
-        STORE_LABEL_PATH.parent.mkdir(parents=True, exist_ok=True)
-        STORE_IMAGES_PATH = Path(STORE_PATH, 'train', 'images')
-        STORE_IMAGES_PATH.mkdir(parents=True, exist_ok=True)
-        true_labels = []
-        adv_labels = []
-        names = []
-
-        correct = 0
-        start = time.time()
-        
-
-        print(f'''\nsaving predictions to: {STORE_LABEL_PATH}''')
-        print(f'''saving output tensors to: {STORE_IMAGES_PATH}''')
-
-        for images, labels, img_names in tqdm(train_loader):
-            if args.device=='cuda':
-                images.cuda(non_blocking=True)
-                labels = labels.cuda(non_blocking=True)
-
-            adv_images = atk(images, labels)
-
-            with torch.no_grad():
-                outputs = model_wrap(adv_images)
-
-            _, pre = torch.max(outputs.data, 1)
-
-            correct += (pre == labels).sum()
-
-
-            for adv_img, img_name in zip(adv_images, img_names):
-                save_image(adv_img, fp=Path(STORE_IMAGES_PATH, img_name), format= "JPEG")
-            
-            true_labels.extend(labels.detach().cpu().tolist())
-            adv_labels.extend(pre.detach().cpu().tolist())
-            names.extend(img_names)
-        
-
-        print('\nTotal elapsed time (sec): %.2f' % (time.time() - start))
-
-        print('Accuracy against attack: %.2f %%' % (100 * float(correct) / len(train_loader.dataset)))
-        print(f'''\n''')
-        
-        data_dict = {'image': names, 'reduced_label':true_labels, name+'_pred':adv_labels}
-        df = pd.DataFrame(data_dict)
-        df['image'] = df['image'].str.split('.').str[0]
-        df.to_csv(STORE_LABEL_PATH, sep=",")
         
         print('Validation set')
         
@@ -177,7 +148,7 @@ def advDatasetGeneration(args, attacks):
             adv_images = atk(images, labels)
 
             with torch.no_grad():
-                outputs = model_wrap(adv_images)
+                outputs = model(adv_images)
 
             _, pre = torch.max(outputs.data, 1)
 
@@ -185,7 +156,8 @@ def advDatasetGeneration(args, attacks):
 
             
             for adv_img, img_name in zip(adv_images, img_names):
-                save_image(adv_img, fp=Path(STORE_IMAGES_PATH, img_name), format= "JPEG")
+                with open(Path(STORE_IMAGES_PATH, img_name), 'wb') as f:
+                    torch.save(adv_img, f)
                 
             true_labels.extend(labels.detach().cpu().tolist())
             adv_labels.extend(pre.detach().cpu().tolist())
@@ -204,7 +176,5 @@ def advDatasetGeneration(args, attacks):
 
 if __name__ == '__main__':
     
-    parser.add_argument('--attack', default='all', type=str, help="""type of attack""")
-
     args = parser.parse_args()
     advDatasetGeneration(args, attacks)

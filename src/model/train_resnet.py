@@ -19,24 +19,61 @@ from src.helpers.helpers import imshow
 
 import random
 
-def train(model, 
-          classifier, 
-          train_loader, 
+from torchvision.models.resnet import ResNet, Bottleneck
+
+# # Import DINO
+# Official repo: https://github.com/facebookresearch/dino
+class LinearClassifier(nn.Module):
+    """Linear layer to train on top of frozen features"""
+    def __init__(self, dim, num_labels=9):
+        super(LinearClassifier, self).__init__()
+        self.num_labels = num_labels
+        self.linear = nn.Linear(dim, num_labels)
+        self.linear.weight.data.normal_(mean=0.0, std=0.01)
+        self.linear.bias.data.zero_()
+
+    def forward(self, x):
+        # flatten
+        x = x.view(x.size(0), -1)
+
+        # linear layer
+        return self.linear(x)
+    
+class CustomResNet(ResNet):
+    def __init__(self):
+        super(CustomResNet, self).__init__(block=Bottleneck, layers=[3, 4, 6, 3])
+        self.load_state_dict(torch.load("/cluster/scratch/jrando/resnet/resnet.pth"))
+        del self.fc
+        
+    def _forward_impl(self, x):
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = self.relu(x)
+        x = self.maxpool(x)
+
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
+        x = self.layer4(x)
+
+        x = self.avgpool(x)
+        x = torch.flatten(x, 1)
+
+        return x
+
+
+def train(train_loader, 
           validation_loader, 
           log_dir=None, 
           tensor_dir=None, 
           optimizer=None, 
           criterion=nn.CrossEntropyLoss(), 
-          adversarial_attack=None, 
           epochs=None, 
           val_freq=1, 
           batch_size=16, 
           lr=0.001, 
+          adversarial_attack=None,
           to_restore = {"epoch": 0, "best_acc": 0.}, 
-          n=4, 
-          avgpool_patchtokens=False, 
-          show_image=False,
-          adv_prob = 0.5,
           args = None):
 
     """ Trains a classifier ontop of a base model. The input can be perturbed by selecting an adversarial attack.
@@ -58,8 +95,13 @@ def train(model,
         :param avgpool_patchtokens: from DINO. Default: False
         
     """
+    model = CustomResNet().cuda()
+    classifier = LinearClassifier(2048, 9).cuda()
+    
+    for param in model.parameters():
+        param.requires_grad = False
+    
     if args is not None:
-        avgpool_patchtokens = args.avgpool_patchtokens
         device = args.device
         num_labels = args.num_labels
         if log_dir is None:
@@ -70,13 +112,8 @@ def train(model,
             epochs = args.epochs
         val_freq = args.val_freq
         lr = args.lr
-        n = args.n_last_blocks
         batch_size = args.batch_size
-    if model is not None:
-        model.cuda()
-        model.eval()
         
-    classifier.cuda()
     if optimizer is None:
         optimizer = torch.optim.SGD(
             classifier.parameters(),
@@ -90,13 +127,7 @@ def train(model,
     # Optionally resume from a checkpoint
     log_dir = Path(log_dir)
     log_dir.mkdir(parents=True, exist_ok=True)
-    utils.restart_from_checkpoint(
-        Path(log_dir, "checkpoint.pth.tar"),
-        run_variables=to_restore,
-        state_dict=classifier,
-        optimizer=optimizer,
-        scheduler=scheduler,
-    )
+    
     start_epoch = to_restore["epoch"]
     best_acc = to_restore["best_acc"]
     
@@ -108,17 +139,12 @@ def train(model,
 
         # train epoch
         train_stats, metric_logger = train_epoch(model=model, 
-                                                 classifier=classifier, 
+                                                 classifier=classifier,
                                                  optimizer=optimizer, 
                                                  criterion=criterion,
                                                  train_loader=train_loader, 
                                                  tensor_dir=tensor_dir, 
-                                                 adversarial_attack=adversarial_attack, 
-                                                 epoch=epoch, 
-                                                 n=n, 
-                                                 avgpool_patchtokens=avgpool_patchtokens, 
-                                                 adv_prob=adv_prob,
-                                                 show_image=show_image)
+                                                 epoch=epoch)
         loggers['train'].append(metric_logger)
         scheduler.step()
 
@@ -132,15 +158,12 @@ def train(model,
                 tensor_dir_epoch.mkdir(parents=True, exist_ok=True)
             else:
                 tensor_dir_epoch = tensor_dir
-            test_stats, metric_logger = validate_network(model=model, 
-                                                         classifier=classifier, 
+            test_stats, metric_logger = validate_network(model=model,
+                                                         classifier=classifier,
                                                          validation_loader=validation_loader, 
                                                          criterion=criterion,
                                                          tensor_dir=tensor_dir_epoch, 
-                                                         adversarial_attack=adversarial_attack, 
-                                                         n=n, 
-                                                         avgpool_patchtokens=avgpool_patchtokens, 
-                                                         show_image=show_image)
+                                                         adversarial_attack=adversarial_attack)
             loggers['validation'].append(metric_logger)
             print(f"Accuracy at epoch {epoch} of the network on the {len(validation_loader)} test images: {test_stats['acc1']:.1f}%")
             best_acc = max(best_acc, test_stats["acc1"])
@@ -166,17 +189,13 @@ def train(model,
     
 
 
-def train_epoch(model, 
-                classifier, 
+def train_epoch(model,
+                classifier,
                 train_loader, 
                 optimizer, 
                 criterion=nn.CrossEntropyLoss(), 
                 tensor_dir=None, 
-                adversarial_attack=None, 
                 epoch=0, 
-                n=4, 
-                avgpool_patchtokens=False,
-                adv_prob=0.5,
                 show_image=False):
     """ Trains a classifier ontop of a base model. The input can be perturbed by selecting an adversarial attack.
         
@@ -193,6 +212,8 @@ def train_epoch(model,
         
     """
     classifier.train()
+    model.eval()
+    
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
     header = 'Epoch: [{}]'.format(epoch)
@@ -209,24 +230,11 @@ def train_epoch(model,
         # move to gpu
         inp = inp.cuda(non_blocking=True)
         target = target.cuda(non_blocking=True)
-
-        # adversarial attack  
-        if adversarial_attack is not None and random.uniform(0, 1) >= 0.5:
-            inp = adversarial_attack(inp, target)
         
-        if model is not None:
-            # forward
-            with torch.no_grad():
-                model_output = model_forward(model, inp, n, avgpool_patchtokens)
-                
-            # save output      
-            if tensor_dir is not None and epoch == 0:
-                save_output_batch(model_output, names, tensor_dir)
+        with torch.no_grad():
+            model_output = model_forward(model, inp)
             
-            output = classifier(model_output)
-            
-        else:
-            output = classifier(inp)
+        output = classifier(model_output)
             
         # compute loss
         loss = criterion(output, target)
@@ -242,28 +250,21 @@ def train_epoch(model,
         torch.cuda.synchronize()
         metric_logger.update(loss=loss.item())
         metric_logger.update(lr=optimizer.param_groups[0]["lr"])
+    
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
     print("Averaged stats:", metric_logger)
     
-    if show_image:
-        imshow(inp[0].detach())
-        if len(inp)>14:
-            imshow(inp[14].detach())
-        imshow(inp[-1].detach())
     return {k: meter.global_avg for k, meter in metric_logger.meters.items()}, metric_logger
 
 
 def validate_network(model, 
-                     classifier, 
+                     classifier,
                      validation_loader, 
                      criterion=nn.CrossEntropyLoss(), 
                      tensor_dir=None, 
                      adversarial_attack=None, 
-                     n=4, 
-                     avgpool_patchtokens=False, 
                      path_predictions=None, 
-                     show_image=False,
                      log_interval=None):
     """ Validates a classifier ontop of an optional model with an optional 
         adversarial attack. 
@@ -284,15 +285,13 @@ def validate_network(model,
                                  attack the adversarial prediction.
         :param show_image: shows the last couple images in the last batch.
     """
-    if model is not None:
-        model.eval()
+    num_labels = 9
+    model.eval()
     classifier.eval()
+        
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = 'Test:'
-    if 'num_labels' in dir(classifier):
-        num_labels = classifier.num_labels
-    else:
-        num_labels = classifier.module.num_labels
+        
     if path_predictions is not None:
         print(f'''saving predictions to: {path_predictions}''')
         path_predictions.parent.mkdir(parents=True, exist_ok=True)
@@ -301,11 +300,6 @@ def validate_network(model,
         predicted_labels = []
         if adversarial_attack is not None:
             adv_predicted_labels = []
-    if tensor_dir is not None:
-        tensor_dir.mkdir(parents=True, exist_ok=True)
-        if adversarial_attack is not None:
-            adv_tensor_dir = Path(tensor_dir,'adv')
-            adv_tensor_dir.mkdir(parents=True, exist_ok=True)
     
     if log_interval is None:
         if len(validation_loader)<20:
@@ -323,17 +317,8 @@ def validate_network(model,
         # benign
         # forward
         with torch.no_grad():
-            if model is not None:
-                model_output = model_forward(model, inp, n, avgpool_patchtokens)
-                
-                # save output
-                if tensor_dir is not None:
-                    save_output_batch(model_output, batch_names, tensor_dir)
-                
-                output = classifier(model_output)
-            else:
-                output = classifier(inp)
-
+            output = model_forward(model, inp)
+            output = classifier(output)
             loss = criterion(output, target)
         
         if num_labels >= 5:
@@ -352,18 +337,7 @@ def validate_network(model,
             
             # forward
             with torch.no_grad():
-                if model is not None:
-                    model_output = model_forward(model, inp, n, avgpool_patchtokens)
-
-                    # save output
-                    if tensor_dir is not None:
-                        save_output_batch(model_output, batch_names, adv_tensor_dir)
-                    
-                    adv_output = classifier(model_output)
-                    
-                else:
-                    adv_output = classifier(inp)
-                    
+                adv_output = model_forward(model, inp)
                 adv_loss = criterion(adv_output, target)
 
             if num_labels >= 5:
@@ -399,32 +373,12 @@ def validate_network(model,
         if adversarial_attack is not None:
             data_dict["adv_pred_labels"] =  adv_predicted_labels
         pd.DataFrame(data_dict).to_csv(path_predictions, sep=",", index=None)
-    if show_image:
-        imshow(inp[0].detach())
-        if len(inp)>14:
-            imshow(inp[14].detach())
-        imshow(inp[-1].detach())
+    
     return {k: meter.global_avg for k, meter in metric_logger.meters.items()}, metric_logger
 
 
 
-def save_output_batch(batch_out, batch_names, output_dir):
-    """ Saves the output of a model into the output_dir.
-        
-        :param batch_out: The model output that will be saved.
-        :param batch_names: The corresponding names.
-        :param output_dir: The output directory in which the output will be 
-        saved.
-    """
-    batch_out_cpu = batch_out.clone().detach()
-    batch_out_cpu.cpu()
-    for out, name in zip(batch_out_cpu, batch_names):
-        out_path = Path(output_dir,name.split('.')[0]+'.pt')
-        torch.save(out, out_path)
-
-
-
-def model_forward(model, inp, n=4, avgpool_patchtokens=False):
+def model_forward(model, inp):
     """ Performs a forward pass on a dino model.
         
         :param model: dino model (frozen)
@@ -435,14 +389,5 @@ def model_forward(model, inp, n=4, avgpool_patchtokens=False):
     
     # Normalize
     transform = pth_transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
-    inp = transform(inp)  
-
-    if 'get_intermediate_layers' in dir(model):
-        intermediate_output = model.get_intermediate_layers(inp, n)
-        model_output = torch.cat([x[:, 0] for x in intermediate_output], dim=-1)
-        if avgpool_patchtokens:
-            model_output = torch.cat((model_output.unsqueeze(-1), torch.mean(intermediate_output[-1][:, 1:], dim=1).unsqueeze(-1)), dim=-1)
-            model_output = model_output.reshape(model_output.shape[0], -1)
-    else:
-        model_output = model(inp)
-    return model_output
+    inp = transform(inp)
+    return model.forward(inp)

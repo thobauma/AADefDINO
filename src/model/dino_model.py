@@ -3,6 +3,7 @@ from dino.eval_linear import LinearClassifier
 from dino import utils
 import torch
 from torchvision import transforms as pth_transforms
+from torch import nn
 
 # Taken from DINO official repo
 # Official repo: https://github.com/facebookresearch/dino

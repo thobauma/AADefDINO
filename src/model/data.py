@@ -171,17 +171,19 @@ class AdvTrainingImageDataset(Dataset):
                    img_folder: str, 
                    labels_file_name: str, 
                    transform: callable,
-                   index_subset: List[int] = None):
+                   index_subset: List[int] = None,
+                return_reduced=True):
         super().__init__()
         self.transform=transform
         self.img_folder=img_folder
         self.data = self.create_df(labels_file_name)
         self.index_subset=index_subset
+        self.return_reduced = return_reduced
         self.prepare_data()
 
     def prepare_data(self):
         if self.index_subset is not None:
-            data_subset = self.data.iloc[index_subset]
+            data_subset = self.data.iloc[self.index_subset]
         else:
             data_subset = self.data
         self.data = data_subset
@@ -200,6 +202,53 @@ class AdvTrainingImageDataset(Dataset):
         img = img.convert('RGB')
         filename= filename.split('.')[0]
         img=self.transform(img)
-        red_target=self.data['reduced_label'].iloc[index]
+        if self.return_reduced:
+            target=self.data['reduced_label'].iloc[index]
+        else:
+            target = self.data['label'].iloc[index]
 
-        return img, red_target, filename
+        return img, target, filename
+
+    
+class TensorImageDataset(Dataset):
+    def __init__(self, 
+                   img_folder: str, 
+                   labels_file_name: str, 
+                   transform: callable,
+                   index_subset: List[int] = None,
+                return_reduced=True):
+        
+        super().__init__()
+        self.transform=transform
+        self.img_folder=img_folder
+        self.data = self.create_df(labels_file_name)
+        self.index_subset=index_subset
+        self.return_reduced = return_reduced
+        self.prepare_data()
+
+    def prepare_data(self):
+        if self.index_subset is not None:
+            data_subset = self.data.iloc[self.index_subset]
+        else:
+            data_subset = self.data
+        self.data = data_subset
+
+
+    def create_df(self, labels_file_name: str):
+        df = pd.read_csv(labels_file_name, sep=",", index_col=0)
+        return df
+    
+    def __len__(self):
+        return len(self.data)
+  
+    def __getitem__(self, index):
+        filename = self.data['image'].iloc[index]
+        filename= filename.split('.')[0]
+        with open(os.path.join(self.img_folder, filename), 'rb') as f:
+            img=torch.load(f)
+        if self.return_reduced:
+            target=self.data['reduced_label'].iloc[index]
+        else:
+            target = self.data['label'].iloc[index]
+
+        return img, target, filename

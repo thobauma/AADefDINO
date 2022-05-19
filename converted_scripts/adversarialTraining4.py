@@ -78,11 +78,10 @@ attacks = [
    # (dict(eps=0.003, alpha=(0.003*2)/3, steps=3), 'pgd_003_new'),
 #    (dict(eps=0.007, alpha=(0.007*2)/3, steps=3), 'pgd_007'),
 #    (dict(eps=0.01, alpha=(0.01*2)/3, steps=3), 'pgd_01_test'),
-    (dict(eps=0.03, alpha=(0.03*2)/3, steps=3), 'pgd_03_vanilla50'),
+#    (dict(eps=0.03, alpha=(0.03*2)/3, steps=3), 'pgd_03_newhead'),
 #   (dict(eps=0.05, alpha=(0.05 * 2) / 3, steps=3), 'pgd_05_newhead'),
-#    (dict(eps=0.1, alpha=(0.1 * 2) / 3, steps=3), 'pgd_1'),
+    (dict(eps=0.1, alpha=(0.1 * 2) / 3, steps=3), 'pgd_newhead'),
 ]
-
 
 if __name__ == "__main__":
 
@@ -126,7 +125,7 @@ if __name__ == "__main__":
                 train_loader,
                 val_loader, 
                 LOG_PATH, 
-                epochs=2,
+                epochs=3,
                 adversarial_attack=train_attack,
                 show_image=False,
                 args=args

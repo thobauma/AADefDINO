@@ -10,7 +10,7 @@ def get_random_classes(number_of_classes: int = 50, min_rand_class: int = 1, max
 
 def get_random_indexes(number_of_images: int = 50000, n_samples: int=1000, seed: int = 42):
     np.random.seed(seed)
-    return np.random.choice(50000, n_samples, replace=False)
+    return np.random.choice(number_of_images, n_samples, replace=False)
 
 def imshow(img):
     npimg = img.cpu().numpy()

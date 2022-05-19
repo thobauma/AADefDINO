@@ -45,7 +45,7 @@ parser.add_argument('--posthoc_data', default='', type=str, action=convertString
 parser.add_argument('--out_dir', default=None, type=str, action=convertStringToPathAction, help=""""output directory""")
 parser.add_argument('--log_dir', default=DATA/'models', action=convertStringToPathAction, help='Path to save logs and checkpoints')
 parser.add_argument('--num_labels', default=1000, type=int, help='Number of labels for linear classifier')
-parser.add_argument('--batch_size', default=64, type=int, help="batch size")
+parser.add_argument('--batch_size', default=80, type=int, help="batch size")
 parser.add_argument('--device', default='cuda', type=str, help="""cuda or not""")
 parser.add_argument('--pretrained_weights', default='', type=str, help="Path to pretrained weights to evaluate.")
 parser.add_argument('--arch', default='vit_small', type=str, help='Architecture')
