@@ -41,7 +41,7 @@ class LinearBC(nn.Module):
 
 def train_posthoc_classifier(adv_attacks, args):
     logger_dict = {}
-
+    model, base_linear_classifier = get_dino(args=args)
     ORI_TRAIN_PATH = args.filtered_data/'train'
     ORI_VALIDATION_PATH = args.filtered_data/'validation'
     for name in adv_attacks:
@@ -68,11 +68,11 @@ def train_posthoc_classifier(adv_attacks, args):
         print(f'''val samples: {len(val_set)} \n''')
 
         # Initialise network
-        classifier = LinearBC(1536)
+        classifier = LinearBC(base_linear_classifier.linear.in_features)
         criterion = nn.CrossEntropyLoss()
         classifier.cuda()
         optimizer = torch.optim.Adagrad(classifier.parameters(), lr=0.001, lr_decay=1e-08, weight_decay=0)
-        logger_dict[name] = train(model=None, 
+        logger_dict[name] = train(model=model, 
                                 classifier=classifier, 
                                 train_loader=train_loader, 
                                 validation_loader=val_loader, 
