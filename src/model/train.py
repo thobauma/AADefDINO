@@ -192,7 +192,7 @@ def train_epoch(model,
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
     header = 'Epoch: [{}]'.format(epoch)
-    if log_interval is not None:
+    if log_interval is None:
         if len(train_loader)<20:
             log_interval = 1
         elif len(train_loader)<100:
