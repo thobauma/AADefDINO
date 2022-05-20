@@ -95,8 +95,8 @@ def train_posthoc_classifier(adv_attacks, args):
 if __name__ == "__main__":
     attacks = [
         "pgd_0001",
-        "pgd_003",
-        "pgd_01",
+        # "pgd_003",
+        # "pgd_01",
         # "fgsm_0001",
         # "fgsm_003",
         # "fgsm_01",

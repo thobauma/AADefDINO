@@ -135,11 +135,11 @@ class PosthocTrainDataset(torch.utils.data.Dataset):
         self.adv_df = pd.read_csv(adv_df_path, sep=",", index_col=0)
         
     def __len__(self):
-        return len(self.or_df_path) + len(self.atk_df_path)
+        return len(self.or_df) + len(self.adv_df)
     
     def __getitem__(self, index):  
-        if index >= len(self.or_df_path):
-            filename = self.adv_df['image'].iloc[index]
+        if index >= len(self.or_df):
+            filename = self.adv_df['image'].iloc[index-len(self.or_df)]
             label = 0
             payload = torch.load(Path(self.adv_img_folder, filename)).cpu()
 
