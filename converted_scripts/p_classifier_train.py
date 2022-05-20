@@ -26,72 +26,6 @@ random.seed(SEED)
 torch.manual_seed(SEED)
 np.random.seed(SEED)
 
-DATA_PATH = Path('..', 'data_dir')
-MAX_PATH = DATA_PATH
-
-BASE_ADV_PATH = Path(MAX_PATH, 'adversarial_data_tensors')
-BASE_POSTHOC_PATH = Path(MAX_PATH, 'posthoc_tensors')
-POSTHOC_MODELS_PATH = Path(MAX_PATH, 'posthoc_models')
-
-ORI_PATH = Path(DATA_PATH, 'ori')
-CLASS_SUBSET_PATH = Path(ORI_PATH, 'class_subset.npy')
-CLASS_SUBSET = np.load(CLASS_SUBSET_PATH)
-
-ADV_DATASETS = ['cw', 'fgsm_06', 'pgd_03']
-
-DATASETS = [*ADV_DATASETS, 'ori']
-
-
-# In[ ]:
-
-
-DATA_PATHS = create_paths(data_name='ori',
-                 datasets_paths=None,  
-                 initial_base_path=DATA_PATH, 
-                 posthoc_base_path=BASE_POSTHOC_PATH, 
-                 train_str='train', 
-                 val_str='validation')
-for adv_ds in ADV_DATASETS:
-    DATA_PATHS = create_paths(data_name=adv_ds,
-                 datasets_paths=DATA_PATHS,  
-                 initial_base_path=BASE_ADV_PATH, 
-                 posthoc_base_path=BASE_POSTHOC_PATH, 
-                 train_str='train', 
-                 val_str='validation')
-
-
-
-
-
-
-# In[ ]:
-
-
-def prepare_data_df(adv_datasets, dataset_paths):
-    train_dfs = {}
-    for ds in adv_datasets:
-        train_dfs[ds] = pd.read_csv(Path(BASE_POSTHOC_PATH, ds, 'train', 'labels_merged.csv'))
-
-    val_dfs = {}
-    for ds in adv_datasets:
-        val_dfs[ds] = pd.read_csv(Path(BASE_POSTHOC_PATH, ds, 'validation', 'labels_merged.csv'))
-
-    # get adversarial tuples
-    for name, df in train_dfs.items():
-        df=df[df['true_labels']==df['ori_pred']]
-        df=df[df['true_labels']!=df[name+'_pred']]
-        df =df[['file', 'true_labels', 'ori_pred', name+'_pred']]
-        train_dfs[name]=df
-    return train_dfs, val_dfs
-
-
-# In[ ]:
-
-
-train_dfs, val_dfs = prepare_data_df(ADV_DATASETS, DATA_PATHS)
-
-
-# In[ ]:
 
 
 # Linear Binary Classifier
@@ -105,28 +39,29 @@ class LinearBC(nn.Module):
         x = self.fc1(x)
         return x
 
-
-# In[ ]:
-
-
-def train_posthoc_classifier(adv_datasets, dataset_paths, epochs=EPOCHS):
+def train_posthoc_classifier(adv_attacks, args):
     logger_dict = {}
-    for ds in adv_datasets:
-        print("#"*50 + f''' training linear classifier for {ds} ''' + "#"*50)
+
+    ORI_TRAIN_PATH = args.filtered_data/'train'
+    ORI_VALIDATION_PATH = args.filtered_data/'validation'
+    for name in adv_attacks:
+        LOG_PATH = Path(args.log_dir, name)
+        ADV_DATA = Path(args.data_root, 'adv', name)
+        print("#"*50 + f''' training linear classifier for {name} ''' + "#"*50)
         # loaders
-        ori_train = dataset_paths['ori']['posthoc']['train']['images']
-        adv_train = dataset_paths[ds]['posthoc']['train']['images']
+        ori_train = ORI_TRAIN_PATH/'images'
+        adv_train = Path(ADV_DATA,'train', 'images')
         print(f'''original images: {ori_train}''')
         print(f'''adversarial images: {adv_train}''')
-        train_set = PosthocTrainDataset(ori_train, adv_train, train_dfs[ds])
+        train_set = PosthocTrainDataset(ori_train, adv_train,ORI_TRAIN_PATH/'labels.csv', Path(ADV_DATA,'train','labels.csv'))
         train_loader = DataLoader(train_set, batch_size=args.batch_size, num_workers=args.num_workers, pin_memory=args.pin_memory, shuffle=True)
         
-        
-        ori_validation = dataset_paths['ori']['posthoc']['validation']['images']
-        adv_validation = dataset_paths[ds]['posthoc']['validation']['images']
+
+        ori_validation = ORI_VALIDATION_PATH/'images'
+        adv_validation = Path(ADV_DATA, 'validation', 'images')
         print(f'''original images: {ori_validation}''')
         print(f'''adversarial images: {adv_validation}''')
-        val_set = PosthocTrainDataset(ori_validation, adv_validation, val_dfs[ds])
+        val_set = PosthocTrainDataset(ori_validation, adv_validation, ORI_VALIDATION_PATH/'labels.csv', Path(ADV_DATA,'validation','labels.csv'))
         val_loader = DataLoader(val_set, batch_size=args.batch_size, num_workers=args.num_workers, pin_memory=args.pin_memory, shuffle=False)
 
         print(f'''train samples: {len(train_set)} ''')
@@ -137,29 +72,37 @@ def train_posthoc_classifier(adv_datasets, dataset_paths, epochs=EPOCHS):
         criterion = nn.CrossEntropyLoss()
         classifier.cuda()
         optimizer = torch.optim.Adagrad(classifier.parameters(), lr=0.001, lr_decay=1e-08, weight_decay=0)
-        logger_dict[ds] = train(model=None, 
+        logger_dict[name] = train(model=None, 
                                 classifier=classifier, 
                                 train_loader=train_loader, 
                                 validation_loader=val_loader, 
-                                log_dir=Path(POSTHOC_MODELS_PATH,ds),
+                                log_dir=LOG_PATH,
                                 tensor_dir=None, 
                                 optimizer=optimizer, 
                                 criterion=criterion, 
                                 adversarial_attack=None, 
-                                epochs=epochs, 
-                                val_freq=1, 
-                                batch_size=16,  
-                                lr=0.001, 
+                                epochs=args.epochs, 
+                                val_freq=args.val_freq, 
+                                batch_size=args.batch_size,  
+                                lr=args.batch_size, 
                                 to_restore = {"epoch": 0, "best_acc": 0.}, 
-                                n=4, 
-                                avgpool_patchtokens=False)
+                                n=args.n_last_blocks, 
+                                avgpool_patchtokens=args.avgpool_patchtokens)
 
         print(f'''\n''')
     return logger_dict
 
+if __name__ == "__main__":
+    attacks = [
+        "pgd_0001",
+        "pgd_003",
+        "pgd_01",
+        # "fgsm_0001",
+        # "fgsm_003",
+        # "fgsm_01",
+        # "cw_50"
+    ]
+    args = parser.parse_args()
 
-# In[ ]:
-
-
-loggers = train_posthoc_classifier(['cw'], DATA_PATHS, 5)
+    loggers = train_posthoc_classifier(attacks, args)
 
