@@ -144,13 +144,13 @@ class PosthocTrainDataset(torch.utils.data.Dataset):
         if index >= len(self.or_df):
             index = index - len(self.or_df)
             filename = self.adv_df['image'].iloc[index]
-            label = 0
+            label = torch.tensor([1., 0.])
             payload = torch.load(Path(self.adv_img_folder, filename)).cpu()
 
             return payload, label, filename
         else:
             filename = self.or_df['image'].iloc[index]
-            label = 1
+            label = torch.tensor([0., 1.])
             img = Image.open(Path(self.or_img_folder, filename))
             img = img.convert('RGB')
             filename= filename.split('.')[0]
