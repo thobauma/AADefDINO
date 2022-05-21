@@ -316,7 +316,8 @@ def validate_network(model,
         # move to gpu
         inp = inp.cuda(non_blocking=True)
         target = target.cuda(non_blocking=True) 
-
+        if len(target.shape)>1:
+            target = target.argmax(1)
         # benign
         # forward
         with torch.no_grad():
