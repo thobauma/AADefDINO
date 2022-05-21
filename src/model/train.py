@@ -310,6 +310,7 @@ def validate_network(model,
             log_interval = 5
         else:
             log_interval = 20
+    print(log_interval)
     for inp, target, batch_names in metric_logger.log_every(validation_loader, log_interval, header):
 
         # move to gpu

@@ -127,19 +127,23 @@ class PosthocTrainDataset(torch.utils.data.Dataset):
                  or_img_folder, 
                  adv_img_folder, 
                  or_df_path,
-                 adv_df_path):
+                 adv_df_path,
+                 transform=ORIGINAL_TRANSFORM):
         super().__init__()
+        self.transform=transform
         self.or_img_folder = or_img_folder
         self.adv_img_folder = adv_img_folder
         self.or_df = pd.read_csv(or_df_path, sep=",", index_col=0)
         self.adv_df = pd.read_csv(adv_df_path, sep=",", index_col=0)
+        self.transform = transform
         
     def __len__(self):
         return len(self.or_df) + len(self.adv_df)
     
     def __getitem__(self, index):  
         if index >= len(self.or_df):
-            filename = self.adv_df['image'].iloc[index-len(self.or_df)]
+            index = index - len(self.or_df)
+            filename = self.adv_df['image'].iloc[index]
             label = 0
             payload = torch.load(Path(self.adv_img_folder, filename)).cpu()
 
@@ -147,9 +151,12 @@ class PosthocTrainDataset(torch.utils.data.Dataset):
         else:
             filename = self.or_df['image'].iloc[index]
             label = 1
-            payload = torch.load(Path(self.or_img_folder, filename)).cpu()
+            img = Image.open(Path(self.or_img_folder, filename))
+            img = img.convert('RGB')
+            filename= filename.split('.')[0]
+            img=self.transform(img)
 
-            return payload, label, filename
+            return img, label, filename
 
 
 class EnsembleDataset(torch.utils.data.Dataset):
