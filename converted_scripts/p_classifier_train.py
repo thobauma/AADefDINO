@@ -45,7 +45,7 @@ def train_posthoc_classifier(adv_attacks, args):
     ORI_TRAIN_PATH = args.filtered_data/'train'
     ORI_VALIDATION_PATH = args.filtered_data/'validation'
     for name in adv_attacks:
-        LOG_PATH = Path(args.log_dir, name+"_posthoc")
+        LOG_PATH = Path(args.log_dir, 'posthoc', name)
         ADV_DATA = Path(args.data_root, 'adv', name)
         print("#"*50 + f''' training linear classifier for {name} ''' + "#"*50)
         # loaders
