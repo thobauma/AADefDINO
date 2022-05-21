@@ -45,7 +45,7 @@ def train_posthoc_classifier(adv_attacks, args):
     ORI_TRAIN_PATH = args.filtered_data/'train'
     ORI_VALIDATION_PATH = args.filtered_data/'validation'
     for name in adv_attacks:
-        LOG_PATH = Path(args.log_dir, name)
+        LOG_PATH = Path(args.log_dir, 'posthoc', name)
         ADV_DATA = Path(args.data_root, 'adv', name)
         print("#"*50 + f''' training linear classifier for {name} ''' + "#"*50)
         # loaders
@@ -69,7 +69,7 @@ def train_posthoc_classifier(adv_attacks, args):
 
         # Initialise network
         classifier = LinearBC(base_linear_classifier.linear.in_features)
-        criterion = nn.CrossEntropyLoss()
+        criterion = nn.BCEWithLogitsLoss()
         classifier.cuda()
         optimizer = torch.optim.Adagrad(classifier.parameters(), lr=0.001, lr_decay=1e-08, weight_decay=0)
         logger_dict[name] = train(model=model, 
@@ -83,8 +83,7 @@ def train_posthoc_classifier(adv_attacks, args):
                                 adversarial_attack=None, 
                                 epochs=args.epochs, 
                                 val_freq=args.val_freq, 
-                                batch_size=args.batch_size,  
-                                lr=args.batch_size, 
+                                batch_size=args.batch_size, 
                                 to_restore = {"epoch": 0, "best_acc": 0.}, 
                                 n=args.n_last_blocks, 
                                 avgpool_patchtokens=args.avgpool_patchtokens)
