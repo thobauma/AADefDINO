@@ -57,7 +57,7 @@ if __name__ == '__main__':
 
     for adv_classifier in posthoc_models:
         print("#"*50 + f''' forwardpass on {adv_classifier} classifier ''' + "#"*50)
-        
+
         LOG_PATH = Path(args.log_dir, 'posthoc', adv_classifier)
         classifier = LinearBC(base_linear_classifier.linear.in_features)
         criterion = nn.BCEWithLogitsLoss()
@@ -70,7 +70,7 @@ if __name__ == '__main__':
             run_variables=to_restore,
             state_dict=classifier
         )
-        
+
         for adv_data in attack_datasets:
             print("\n"+"-"*50 + f''' dataset {adv_data} ''' + "-"*50)
             ADV_DATA = Path(args.data_root, 'adv', adv_data)
@@ -81,7 +81,7 @@ if __name__ == '__main__':
             val_set = PosthocTrainDataset(ori_validation, adv_validation, ORI_VALIDATION_PATH/'labels.csv', Path(ADV_DATA,'validation','labels.csv'))
             val_loader = DataLoader(val_set, batch_size=args.batch_size, num_workers=args.num_workers, pin_memory=args.pin_memory, shuffle=False)
             print(f'''val samples: {len(val_set)} \n''')
-            logger_dict[adv_classifier][adv_data] =  validate_network(model=None, 
+            logger_dict[adv_classifier][adv_data] =  validate_network(model=model, 
                                                     classifier=classifier, 
                                                     validation_loader=val_loader, 
                                                     criterion=criterion, 
