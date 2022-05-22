@@ -1,5 +1,6 @@
 from pathlib import Path
 from collections import defaultdict
+import pickle
 
 import numpy as np
 import random
@@ -14,7 +15,7 @@ from torch import nn
 [sys.path.append(i) for i in ['.', '..']]
 
 # local
-from src.model.dino_model import get_dino
+from src.model.dino_model import get_dino, LinearBC
 from src.model.train import *
 from src.model.data import *
 from src.helpers.helpers import create_paths
@@ -27,73 +28,51 @@ torch.manual_seed(SEED)
 np.random.seed(SEED)
 
 
-ADV_DATASETS = ['cw', 'fgsm_06', 'pgd_03']
-DATASETS = ['ori', *ADV_DATASETS]
-
-
-
-def prepare_data_df(adv_datasets, dataset_paths, posthoc_path):
-    train_dfs = {}
-    for ds in adv_datasets:
-        train_dfs[ds] = pd.read_csv(Path(posthoc_path, ds, 'train', 'labels_merged.csv'))
-
-    val_dfs = {}
-    for ds in adv_datasets:
-        val_dfs[ds] = pd.read_csv(Path(posthoc_path, ds, 'validation', 'labels_merged.csv'))
-
-    # get adversarial tuples
-    for name, df in train_dfs.items():
-        df=df[df['true_labels']==df['ori_pred']]
-        df=df[df['true_labels']!=df[name+'_pred']]
-        df =df[['file', 'true_labels', 'ori_pred', name+'_pred']]
-        train_dfs[name]=df
-    return train_dfs, val_dfs
-
-
-
-
-
-
-# Linear Binary Classifier
-class LinearBC(nn.Module):
-    def __init__(self, input_shape):
-        self.num_labels = 2
-        super(LinearBC,self).__init__()
-        self.fc1 = nn.Linear(input_shape,2)
-
-    def forward(self, x):
-        x = self.fc1(x)
-        return x
-
 
 if __name__ == '__main__':
     args = parser.parse_args()
     DATA = args.data_root
     POSTHOC_MATRIX_PATH = DATA/'posthoc_matrix'
     POSTHOC_MATRIX_PATH.mkdir(parents=True, exist_ok=True)
-    train_dfs, val_dfs = prepare_data_df(ADV_DATASETS, DATA_PATHS, args.posthoc_data)
 
+    model, base_linear_classifier = get_dino(args=args)
+    ORI_TRAIN_PATH = args.filtered_data/'train'
+    ORI_VALIDATION_PATH = args.filtered_data/'validation'
     logger_dict = defaultdict(dict)
 
-    
+    posthoc_models = [
+        "pgd_0001",
+        "pgd_003",
+        "pgd_01"
+    ]
+    attack_datasets = [
+        "pgd_0001",
+        "pgd_003",
+        "pgd_01",
+        "fgsm_0001",
+        "fgsm_003",
+        "fgsm_01",
+        "cw_50"
+    ]
 
-    for adv_classifier in ADV_DATASETS:
+    for adv_classifier in posthoc_models:
         print("#"*50 + f''' forwardpass on {adv_classifier} classifier ''' + "#"*50)
         
-        log_dir = Path(POSTHOC_MODELS_PATH, adv_classifier)
+        LOG_PATH = Path(args.log_dir, 'posthoc', adv_classifier)
         classifier = LinearBC(1536)
         classifier.cuda()
 
-        to_restore={'epoch':3}
+        to_restore={'epoch':1}
 
         utils.restart_from_checkpoint(
-            Path(log_dir, "checkpoint.pth.tar"),
+            Path(LOG_PATH, "checkpoint.pth.tar"),
             run_variables=to_restore,
             state_dict=classifier
         )
         
-        for adv_data in ADV_DATASETS:
+        for adv_data in attack_datasets:
             print("\n"+"-"*50 + f''' dataset {adv_data} ''' + "-"*50)
+            ADV_DATA = Path(args.data_root, 'adv', adv_data)
             ori_validation = dataset_paths['ori']['posthoc']['validation']['images']
             adv_validation = dataset_paths[adv_data]['posthoc']['validation']['images']
             print(f'''original images: {ori_validation}''')

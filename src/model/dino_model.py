@@ -5,6 +5,19 @@ import torch
 from torch import nn
 from torchvision import transforms as pth_transforms
 
+
+# Linear Binary Classifier
+class LinearBC(nn.Module):
+    def __init__(self, input_shape):
+        self.num_labels = 2
+        super(LinearBC,self).__init__()
+        self.fc1 = nn.Linear(input_shape,2)
+
+    def forward(self, x):
+        x = self.fc1(x)
+        return x
+
+
 # Taken from DINO official repo
 # Official repo: https://github.com/facebookresearch/dino
 class LinearClassifier(nn.Module):
