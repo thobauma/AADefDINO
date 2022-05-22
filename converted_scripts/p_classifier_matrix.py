@@ -59,10 +59,11 @@ if __name__ == '__main__':
         print("#"*50 + f''' forwardpass on {adv_classifier} classifier ''' + "#"*50)
         
         LOG_PATH = Path(args.log_dir, 'posthoc', adv_classifier)
-        classifier = LinearBC(1536)
+        classifier = LinearBC(base_linear_classifier.linear.in_features)
+        criterion = nn.BCEWithLogitsLoss()
         classifier.cuda()
 
-        to_restore={'epoch':1}
+        to_restore={'epoch':0}
 
         utils.restart_from_checkpoint(
             Path(LOG_PATH, "checkpoint.pth.tar"),
@@ -73,19 +74,22 @@ if __name__ == '__main__':
         for adv_data in attack_datasets:
             print("\n"+"-"*50 + f''' dataset {adv_data} ''' + "-"*50)
             ADV_DATA = Path(args.data_root, 'adv', adv_data)
-            ori_validation = dataset_paths['ori']['posthoc']['validation']['images']
-            adv_validation = dataset_paths[adv_data]['posthoc']['validation']['images']
+            ori_validation = ORI_VALIDATION_PATH/'images'
+            adv_validation =  Path(ADV_DATA, 'validation', 'images')
             print(f'''original images: {ori_validation}''')
             print(f'''adversarial images: {adv_validation}''')
-            val_set = PosthocTrainDataset(ori_validation, adv_validation, val_dfs[adv_data])
+            val_set = PosthocTrainDataset(ori_validation, adv_validation, ORI_VALIDATION_PATH/'labels.csv', Path(ADV_DATA,'validation','labels.csv'))
             val_loader = DataLoader(val_set, batch_size=args.batch_size, num_workers=args.num_workers, pin_memory=args.pin_memory, shuffle=False)
             print(f'''val samples: {len(val_set)} \n''')
             logger_dict[adv_classifier][adv_data] =  validate_network(model=None, 
                                                     classifier=classifier, 
                                                     validation_loader=val_loader, 
-                                                    criterion=nn.CrossEntropyLoss(), 
+                                                    criterion=criterion, 
                                                     tensor_dir=None,
                                                     adversarial_attack=None,  
                                                     path_predictions=Path(POSTHOC_MATRIX_PATH, 'c_'+adv_classifier+'_d_'+adv_data+'.csv'),
                                                     show_image=False,
                                                     log_interval=10)
+    logger_file = open(Path(POSTHOC_MATRIX_PATH,'loggers'), 'ab')
+    pickle.dump(logger_dict, logger_file)
+    logger_file.close()
