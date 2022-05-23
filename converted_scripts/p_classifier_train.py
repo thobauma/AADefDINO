@@ -14,7 +14,7 @@ from torch import nn
 [sys.path.append(i) for i in ['.', '..']]
 
 # local
-from src.model.dino_model import get_dino
+from src.model.dino_model import get_dino, LinearBC
 from src.model.train import *
 from src.model.data import *
 from src.helpers.helpers import create_paths
@@ -26,18 +26,6 @@ random.seed(SEED)
 torch.manual_seed(SEED)
 np.random.seed(SEED)
 
-
-
-# Linear Binary Classifier
-class LinearBC(nn.Module):
-    def __init__(self, input_shape):
-        self.num_labels = 2
-        super(LinearBC,self).__init__()
-        self.fc1 = nn.Linear(input_shape,2)
-
-    def forward(self, x):
-        x = self.fc1(x)
-        return x
 
 def train_posthoc_classifier(adv_attacks, args):
     logger_dict = {}
