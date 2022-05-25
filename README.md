@@ -1,8 +1,8 @@
 # ToDo
-- [ ] Report
-    - [ ] fix the structure of the report (nasib, javi) (19.04.2022)
-    - [ ] some more future work (nasib) (19.04.2022)
-    - [ ] formatting for ICML (max) (19.04.2022)
+- [x] Report
+    - [x] fix the structure of the report (nasib, javi) (19.04.2022)
+    - [x] some more future work (nasib) (19.04.2022)
+    - [x] formatting for ICML (max) (19.04.2022)
 - [ ] Codebase and experiments
     - [ ] Define additional results that are needed (Javi) (19.04.2022)
     - [ ] {BACKLOG} compare the post hoc on dino with a model directly trained on the original and adversarial images (not sure? postpone or clarify)
@@ -13,8 +13,8 @@
     - [ ] {BACKLOG} DINO pretrained on imagenet (might be more robust to that dataset) --> finetune on seperate dataset and see how well it performs against adversarial attacks (does it generalise)
 - [ ] General
     - [x] Ask Luis for feedback&Ideas (Javi) (19.04.2022)
-    - [ ] Go through the paper, write down ideas and things to be improved, share in group (All) (19.04.2022)
-    - [ ] Look at a few papers that were accepted as NIPS workshops (All) (19.04.2022)
+    - [x] Go through the paper, write down ideas and things to be improved, share in group (All) (19.04.2022)
+    - [x] Look at a few papers that were accepted as NIPS workshops (All) (19.04.2022)
     - [ ] Two approaches
         - [ ] Try to reformulate so that we are exploring how these attacks are affecting DINO and draw conclusion
         - [ ] Try to show that we can actually build a defence without retraining entire transformer with adversarial training (not sure if feasible)
@@ -47,7 +47,7 @@
 https://advml-frontier.github.io/
 (https://openreview.net/)
 
-# Defense in Self-Supervised Vision Transformers
+# Defense in Self-Supervised Vision Transformers trained using DINO
 
 Contents:
 
