@@ -1,17 +1,4 @@
-# Defense in Self-Supervised Vision Transformers
-
-Contents:
-
-```
-├── data                    Directory in which all the data, models and labels are stored
-├── dino                        DINO git submodule
-├── notebooks                   Various notebooks
-│   └── 2012_2017_labels_map    ImageNet class mapping
-├── converted_scripts           Most of the experiments
-└── src                         Main code, supporting notebooks and scripts
-    ├── helpers                 
-    └── model
-```
+# Adversarial Attacks and Defenses in Vision Transformers trained with DINO
 
 ## Pipeline
 
