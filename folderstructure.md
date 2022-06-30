@@ -1,6 +1,7 @@
 
+# Overview of the folderstructure inside the data folder:
 ```
-├── data_dir                    
+├── data                    
     └── ori
         └── train
             └── labels.csv

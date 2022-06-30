@@ -192,7 +192,7 @@ def train_epoch(model,
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
     header = 'Epoch: [{}]'.format(epoch)
-    if log_interval is not None:
+    if log_interval is None:
         if len(train_loader)<20:
             log_interval = 1
         elif len(train_loader)<100:
@@ -310,12 +310,13 @@ def validate_network(model,
             log_interval = 5
         else:
             log_interval = 20
+    print(log_interval)
     for inp, target, batch_names in metric_logger.log_every(validation_loader, log_interval, header):
 
         # move to gpu
         inp = inp.cuda(non_blocking=True)
         target = target.cuda(non_blocking=True) 
-
+        
         # benign
         # forward
         with torch.no_grad():
@@ -331,6 +332,9 @@ def validate_network(model,
                 output = classifier(inp)
 
             loss = criterion(output, target)
+            
+        if len(target.shape)>1:
+            target = target.argmax(1)
         
         if num_labels >= 5:
             acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))

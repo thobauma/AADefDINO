@@ -1,9 +1,0 @@
-attacks = [
-    PGD(model_wrap, eps=0.001, alpha=(0.001*2)/3, steps=3),
-    PGD(model_wrap, eps=0.03, alpha=(0.03*2)/3, steps=3),
-    PGD(model_wrap, eps=0.1, alpha=(0.1*2)/3, steps=3),
-    FGSM(model_wrap, eps=0.001),
-    FGSM(model_wrap, eps=0.03),
-    FGSM(model_wrap, eps=0.1),
-    CW(model_wrap, c=50)
-]

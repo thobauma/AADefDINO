@@ -67,13 +67,13 @@ def advDatasetGeneration(args):
     model_wrap = ViTWrapper(model, linear_classifier, device=args.device, n_last_blocks=4, avgpool_patchtokens=False)
     model_wrap = model_wrap.to(args.device)
     attacks = [
-        (PGD(model_wrap, eps=0.001, alpha=(0.001*2)/3, steps=3), "pgd_0001"),
-        (PGD(model_wrap, eps=0.03, alpha=(0.03*2)/3, steps=3),"pgd_003"),
-        (PGD(model_wrap, eps=0.1, alpha=(0.1*2)/3, steps=3),"pgd_01"),
-        # (FGSM(model_wrap, eps=0.001),"fgsm_0001"),
-        # (FGSM(model_wrap, eps=0.03),"fgsm_003"),
-        # (FGSM(model_wrap, eps=0.1),"fgsm_01"),
-        # (CW(model_wrap, c=50, steps=25),"cw_50")
+        # (PGD(model_wrap, eps=0.001, alpha=(0.001*2)/3, steps=3), "pgd_0001"),
+        # (PGD(model_wrap, eps=0.03, alpha=(0.03*2)/3, steps=3),"pgd_003"),
+        # (PGD(model_wrap, eps=0.1, alpha=(0.1*2)/3, steps=3),"pgd_01"),
+        (FGSM(model_wrap, eps=0.001),"fgsm_0001"),
+        (FGSM(model_wrap, eps=0.03),"fgsm_003"),
+        (FGSM(model_wrap, eps=0.1),"fgsm_01"),
+        (CW(model_wrap, c=50, steps=10),"cw_50")
     ]
     for atk, name in attacks:
         if args.out_dir is None:

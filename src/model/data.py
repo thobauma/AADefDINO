@@ -84,6 +84,9 @@ class ImageDataset(Dataset):
 
     return img, target, filename
 
+
+
+
 class PosthocForwardDataset(Dataset):
   def __init__(self, 
                img_folder: Union[str, Path], 
@@ -123,25 +126,38 @@ class PosthocTrainDataset(torch.utils.data.Dataset):
     def __init__(self, 
                  or_img_folder, 
                  adv_img_folder, 
-                 index_df):
+                 or_df_path,
+                 adv_df_path,
+                 transform=ORIGINAL_TRANSFORM):
         super().__init__()
+        self.transform=transform
         self.or_img_folder = or_img_folder
         self.adv_img_folder = adv_img_folder
-        self.index_df = index_df
+        self.or_df = pd.read_csv(or_df_path, sep=",", index_col=0)
+        self.adv_df = pd.read_csv(adv_df_path, sep=",", index_col=0)
+        self.transform = transform
         
     def __len__(self):
-        return len(self.index_df)*2
+        return len(self.or_df) + len(self.adv_df)
     
-    def __getitem__(self, index):            
-        filename = self.index_df['file'].iloc[index%len(self.index_df)]
-        filename = filename.split('.')[0]+'.pt'
-        if index >= len(self.index_df):
-            payload = torch.load(Path(self.or_img_folder, filename)).cpu()
-            label = 0 
-        else:
+    def __getitem__(self, index):  
+        if index >= len(self.or_df):
+            index = index - len(self.or_df)
+            filename = self.adv_df['image'].iloc[index]
+            label = torch.tensor([1., 0.])
             payload = torch.load(Path(self.adv_img_folder, filename)).cpu()
-            label = 1 
-        return payload, label, filename
+
+            return payload, label, filename
+        else:
+            filename = self.or_df['image'].iloc[index]
+            label = torch.tensor([0., 1.])
+            img = Image.open(Path(self.or_img_folder, filename))
+            img = img.convert('RGB')
+            filename= filename.split('.')[0]
+            img=self.transform(img)
+
+            return img, label, filename
+
 
 class EnsembleDataset(torch.utils.data.Dataset):
     def __init__(self, 
