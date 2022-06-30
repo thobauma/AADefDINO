@@ -1,10 +1,1 @@
-data
-data-*
-.ipynb_checkpoints
-colabs/old
-__pycache__/
-setup/test.out
-data_dir
-lsf.*
-log.txt
-nohup.out
+__pycache__

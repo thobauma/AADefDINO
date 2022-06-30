@@ -34,7 +34,7 @@ class convertStringToPathAction(argparse.Action):
 
 
 
-DATA = Path('/cluster/scratch/thobauma/data')
+DATA = Path('/cluster/scratch/data')
 ORI = DATA/'ori'
 
 parser = argparse.ArgumentParser('default')
